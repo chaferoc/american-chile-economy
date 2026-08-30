@@ -1,2 +1,2 @@
 # american-chile-economy
-American Chili Economy
+American Chile Economy
