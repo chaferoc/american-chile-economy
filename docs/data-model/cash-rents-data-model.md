@@ -1,8 +1,10 @@
 # USDA NASS County Cash Rents — Data Model Specification
 
-**Version:** 0.1.0
-**Status:** Approved for build. No transformations executed yet.
-**Last updated:** 2026-08-29
+**Version:** 0.3.2
+**Status:** Model built and validated. Thirteen measures written and validated.
+Two report pages built for the 2026-09-19 producer interview; report layer
+proper not started.
+**Last updated:** 2026-09-13
 **Owner:** Aaron / Heat & Harvest Data Desk
 **Suggested repo path:** `docs/data-model/cash-rents-data-model.md`
 
@@ -26,7 +28,7 @@ chile pepper series is designed for but not ingested; see §9.
 |---|---|
 | Agency | USDA National Agricultural Statistics Service (NASS) |
 | Series | Cash rent paid, by county, $/acre |
-| Extract | Quick Stats CSV, `9A9F55D7E26738C6ACB9DF106291B5A7.csv` |
+| Extract | Quick Stats CSV, `9A9F55D7-E267-38C6-ACB9-DF106291B5A7.csv` |
 | Extract size | 46,942 rows × 24 columns, 7.6 MB |
 | Coverage | 2008–2026, 49 states (Alaska excluded by survey design) |
 | Land categories | Irrigated cropland, non-irrigated cropland, pastureland |
@@ -52,12 +54,32 @@ at ingest: `Program`, `Period`, `Geo Level`, `Commodity`, `Domain`,
 `Zip Code`, `Region`, `Watershed` (all empty).
 
 **3.2 Two survey suspensions.** 2015 and 2018 are absent. These are NASS
-program-wide suspensions, not extract gaps. 17 of 19 years in range are
-present.
+program-wide suspensions, not extract gaps — confirmed absent for all 49 states,
+not merely for some regions. 17 of 19 years in range are present.
+
+The cause is statutory and belongs in the methodology section. Section 2110 of
+the amended 2008 Farm Bill set a floor of "not less frequently than once every
+other year," which the 2018 Farm Bill raised to annual (§2, and the same
+sentence quoted in `crntqm25.pdf`). Under the biennial floor NASS could skip a
+county-level year and did so twice. In both 2015 and 2018 NASS published
+national, regional and state cash rents and did not publish county estimates;
+for 2015 it announced this in advance and resumed in 2016. Because this extract
+is county-level, the skips appear as missing years. **A producer who filled out
+a form in 2015 or 2018 was not imagining it** — a state-level estimate was
+published from that collection. No year after 2018 is missing, which is the
+amendment taking effect.
 
 **3.3 2008 is a partial year.** 1,592 rows against ~2,890 from 2009 onward, and
-135 irrigated values against ~800. Not a comparable baseline; exclude from
-trend claims or annotate.
+135 irrigated values against ~800, across 45 states. Not a comparable baseline;
+exclude from trend claims or annotate.
+
+The shortfall is county coverage in the program's first year, not suppression
+and not the 20,000-acre eligibility threshold. Missouri published 95 counties in
+2008 and 114 in 2009; Iron County has no 2008 row for any land category and then
+publishes in every subsequent year. This matters for any per-county visual: a
+2008 gap and a 2015 gap render identically and mean opposite things — *the
+county was not in the survey yet* versus *the survey did not run*. Annotate
+both, separately.
 
 **3.4 The residual grain changes in 2021.** Two mutually exclusive rollup
 labels exist:
@@ -87,16 +109,28 @@ already sparse by construction.
 
 **3.8 Thousands separators in irrigated values.** 130 irrigated values are
 formatted `"1,050"`. This is the only measure column that parses as text.
-Commas must be stripped before type conversion or those rows null out silently.
-They are the highest-value irrigated counties, so the loss would be systematic.
+
+The hazard is locale, not failure. A type conversion that relies on the ambient
+locale parses `"4,000"` as 4000 where comma is a thousands separator and as 4.0
+where comma is the decimal separator. Neither raises an error. The same PBIX
+refreshed on two machines therefore yields different values, and only in the
+130 highest-rent irrigated counties, so the distortion is systematic rather
+than random. Commas are stripped with `Text.Replace` before any conversion, and
+`Number.FromText` is used bare so an unparseable value surfaces as an Error
+rather than a null (§5, step 4).
 
 **3.9 County ANSI is not a key.** It holds only 265 distinct values — the
-3-digit within-state FIPS. County *name* is not a key either: 410 of 1,721
-names appear in more than one state. `State ANSI` + `County ANSI` yields 2,938
+3-digit within-state FIPS. County *name* is not a key either: 408 of 1,719
+real county names appear in more than one state. (Counting the two rollup
+labels as names gives 410 of 1,721; the smaller figures are the ones to quote.)
+`State ANSI` + `County ANSI` yields 2,938
 distinct entities and is unique within year (zero duplicates).
 
-**3.10 Ag district code is only unique within state.** 24 codes cover 84
-district names across 306 state × district pairs.
+**3.10 Ag district code is only unique within state.** Across real counties, 23
+codes cover 83 district names in 306 state × district pairs. A 24th code, `99`,
+appears only on the 2021–2026 state-residual rows and is a sentinel, not a
+district; counting it gives the whole-extract figures of 24 codes / 84 names /
+355 pairs. `dim_geography` carries the 23-code set.
 
 **3.11 County-to-district assignment is stable.** No county changes ag district
 across the 17 years. No slowly-changing-dimension logic required.
@@ -117,6 +151,10 @@ precision (one decimal place maximum).
 **3.14 CV distribution.** Medians 5.5–6.9%. Pastureland is noisiest: 406
 county-years above 20% CV, 84 above 30%. Extreme is 118.7% (New Mexico state
 residual, non-irrigated, 2025).
+
+All three figures are whole-extract and include residual rows. County-scoped,
+pastureland is 383 above 20% and 75 above 30%, and the median range is
+5.4–6.9%. Quote the county-scoped figures in any claim about counties (§10.5).
 
 **3.15 Non-standard entities.** Hawaii publishes merged entities such as
 `MAUI & KALAWAO` that carry a County ANSI and behave as counties. Retained
@@ -146,22 +184,72 @@ Decisions taken 2026-08-29. Change requires a version bump and an entry in §11.
 
 ## 5. Reshape specification
 
+As built. This ordering differs from the v0.1.x plan in two places, both noted
+below; the end state is identical.
+
 Target grain: one row per geography × year × land category, where a value was
 published.
 
-1. Drop the eleven dead columns (§3.1).
-2. Strip thousands separators from the irrigated value column (§3.8).
-3. Cast all six measure columns to decimal. Blank becomes null. Null is never
-   coalesced to zero at any point in the pipeline.
-4. Unpivot all six measure columns to attribute/value pairs.
-5. Split the attribute into `land_category` and `metric` (`VALUE` or `CV`).
-6. Pivot `metric` back so each row carries `rent_usd_per_acre` and `cv_pct`.
-7. Route rows by county name into three streams: true counties,
-   `OTHER (COMBINED) COUNTIES` (district residual), `OTHER COUNTIES` (state
-   residual).
-8. Drop rows where `rent_usd_per_acre` is null (D1).
+**Staging query `src_cash_rents`** (not loaded to the model):
 
-Expected output volumes:
+| # | Step | Rows out |
+|---|---|---|
+| 1 | `Csv.Document` with `QuoteStyle.Csv`, `Encoding=65001`, no type detection | 46,942 |
+| 2 | Promote headers | 46,942 |
+| 3 | Remove the eleven dead columns (§3.1) via `Table.RemoveColumns` | 46,942 |
+| 4 | `Table.UnpivotOtherColumns`, pinning the seven identity columns | 281,652 |
+| 5 | Strip commas, empty string → null, cast to number (§3.8) | 281,652 |
+| 6 | Join the measure-name map → `land_category_code` + `metric` | 281,652 |
+| 7 | `Table.Pivot` on `metric`, no aggregation → `rent_usd_per_acre`, `cv_pct` | 140,826 |
+| 8 | Drop rows where `rent_usd_per_acre` is null (D1) | **85,413** |
+
+**Branch queries**, each a `Reference` to `src_cash_rents`:
+
+| Query | Filter | Rows |
+|---|---|---|
+| `fact_cash_rent` | `County ANSI` is present | 79,064 |
+| `fact_cash_rent_residual` | `County` is one of the two rollup labels | 6,349 |
+| `dim_geography` | `County ANSI` present, then `Table.Distinct` | 2,938 |
+| `dim_state` | no filter — Rhode Island exists only as a residual row (§3.15) | 49 |
+
+`dim_year` and `dim_land_category` are authored, not derived (§6.5, §6.6).
+
+**Two deviations from the v0.1.x order, and why.**
+
+*Unpivot before cleaning and casting.* The plan cleaned six measure columns and
+then unpivoted. Unpivoting first collapses them into one column, so the comma
+strip and the type cast are single transformations rather than six, and they
+stop being irrigated-specific — a comma appearing in any future measure column
+is handled by the same code.
+
+*Drop nulls before routing.* The plan routed into three streams and then
+dropped nulls in each. Filtering once upstream applies the rule in one place and
+puts a validation checkpoint at 85,413 while all three streams still share a
+lineage, so a bad count identifies the filter rather than the routing. This is
+safe only because no row carries a CV without a value (§3.5); that was verified
+before reordering.
+
+**Three design rules the transformations follow.** Each appears more than once
+above and each was chosen so a source change fails loudly:
+
+1. *Name the stable set, let the volatile set flow.* Remove Columns names the
+   dead columns so a new NASS column arrives visible; Unpivot Other Columns
+   pins the fixed geography block so a new measure column is unpivoted
+   automatically.
+2. *Enumerate rather than parse.* The six measure column names map to
+   `land_category_code` through an explicit lookup table, not a delimiter split
+   or a `Text.Contains` chain. `"NON-IRRIGATED"` contains `"IRRIGATED"`, and a
+   test order dependency is not a correctness argument.
+3. *Prefer the loud failure.* Pivot uses no aggregation, so a duplicate key
+   becomes an Error rather than a silent sum. The two branch filters use
+   different tests — structural for counties, by-label for residuals — so an
+   unrecognized rollup label lands in neither stream and the reconciliation
+   below stops balancing.
+
+**Load-validation targets.** Implemented as the `chk_row_counts` query, 17
+assertions covering row counts, the fact/residual reconciliation, CV
+population, referential integrity on all six foreign keys, and `dim_geography`
+key uniqueness. All 17 pass as of 2026-09-04.
 
 | Stream | Rows |
 |---|---|
@@ -171,8 +259,7 @@ Expected output volumes:
 | **Total populated combinations** | **85,413** |
 | (Dense grid, for reference — not loaded) | 140,826 |
 
-These counts are the load-validation targets. A Power Query refresh that
-returns anything else has lost or duplicated rows.
+CV population splits 29,346 county / 749 residual, totalling 30,095.
 
 ---
 
@@ -236,7 +323,7 @@ fact.
 | `state_name` | text | |
 | `state_abbr` | text(2) | |
 | `nass_region` | text | Northeast, Lake, Corn Belt, Northern Plains, Appalachian, Southeast, Delta, Southern Plains, Mountain, Pacific — per `crntqm25.pdf` |
-| `is_chile_producing` | bool | set at ERS ingest |
+| `is_chile_producing` | bool | **not yet built.** Deliberately absent rather than defaulted to false; set at ERS ingest, when it will also be clear whether a boolean or a first-production-year is the right shape. |
 
 ### 6.5 `dim_year`
 
@@ -250,13 +337,42 @@ Grain: one calendar year. 19 rows, 2008–2026 inclusive.
 | `is_partial_coverage` | bool | true for 2008 only (§3.3) |
 | `cv_published` | bool | false ≤2020, true ≥2021 |
 | `estimation_method` | text | `SURVEY_DIRECT_EXPANSION` ≤2020, `BAYESIAN_SMALL_AREA` ≥2021 — see §10.1 |
-| `residual_grain` | text | `NONE` (2008), `DISTRICT` (2009–2020), `STATE` (2021–2026) |
+| `residual_grain` | text | `NONE` (2008), `DISTRICT` (2009–2020), `STATE` (2021–2026), **null for 2015 and 2018** |
 | `cpi_u_annual` | decimal | BLS CPI-U annual average, US city average, all items |
 | `deflator_to_base` | decimal | see §7 |
 
 Carrying 2015 and 2018 as explicit suspension rows is what makes the break
 visible in a line chart. Without them, a visual connects 2014 straight to 2016
-and implies continuity where the survey did not run.
+and implies continuity where the survey did not run. This is the one table in
+the model that asserts rows the source does not contain, and that is its
+purpose: harvest a calendar from the facts and missing periods become invisible
+by construction.
+
+`residual_grain` is null in the two suspension years, revised from the v0.1.x
+rule that assigned them `DISTRICT`. The column describes what the extract
+contains for a year, and a suspended year contains nothing — labelling it
+`DISTRICT` would claim a rollup structure that was never published. This is
+§3.6 in reverse, and the fix is the same: do not let "not applicable" share a
+token with a real value. `cv_published` and `estimation_method` stay populated
+for those years, because they describe the methodology regime in force, which
+existed whether or not the survey ran. The same reasoning nulls
+`ag_district_code` on `STATE` residual rows, where the source carries sentinel
+code `99` (§3.10).
+
+**The 19-row design is necessary but not sufficient.** It makes the suspension
+break *representable*; it does not make it *appear*. Power BI drops categories
+with no data from an axis, so a line or bar chart of rent by year will still
+connect 2014 straight to 2016 unless the visual has **Show items with no data**
+enabled on the year field. Model design and report design each do half the job
+here, and the model half fails silently on its own. Every time-series visual in
+this report must have that setting on; it is a build requirement, not a
+preference.
+
+`dim_year` has no date column, so it cannot be marked as a date table and DAX
+time intelligence does not apply. This is correct for an annual series — a date
+table would need 365 rows per year to represent a once-yearly measurement — but
+it means `Rent YoY Pct` is written with `year_key - 1` arithmetic rather than
+`SAMEPERIODLASTYEAR`.
 
 ### 6.6 `dim_land_category`
 
@@ -279,8 +395,18 @@ dim_land_category (1) ───────────────────�
 dim_land_category (1) ──────────────────────< (*) fact_cash_rent_residual
 ```
 
-All relationships single-direction, one-to-many, filtering from dimension to
-fact. `dim_state → dim_geography` is a deliberate snowflake: it is what lets
+Seven relationships, all one-to-many, all single cross-filter direction,
+all active. Relationship autodetect is disabled on the file so none of them was
+inferred.
+
+Single direction is load-bearing rather than stylistic. `dim_state`,
+`dim_year`, and `dim_land_category` each reach both facts, so the undirected
+graph contains loops. Single direction makes them harmless: filters travel only
+dimension to fact and no return path exists. One bidirectional relationship
+opens a return path — filtering to pastureland would filter `fact_cash_rent`,
+which would filter `dim_year` to the years pastureland was published, which
+would filter `fact_cash_rent_residual`. A slicer on one fact would silently
+reshape the other. `dim_state → dim_geography` is a deliberate snowflake: it is what lets
 state-level filters reach the county fact and lets the future chile fact share
 a state dimension with it. The denormalized alternative — folding state
 attributes into `dim_geography` — would leave the chile fact with a private
@@ -295,20 +421,56 @@ computed in DAX so the deflator, base year, and index series can change without
 reloading data.
 
 - **Index:** BLS Consumer Price Index for All Urban Consumers (CPI-U), US city
-  average, all items, annual average. Series `CUUR0000SA0`.
-- **Base year:** 2025, the most recent complete calendar year. 2026 is
-  incomplete as of this writing; revisit at year end (§10.2).
+  average, all items, 1982-84=100, annual average. Series `CUUR0000SA0`.
+- **Base year:** 2025.
 - **Deflator:** `deflator_to_base = cpi_u_annual[2025] / cpi_u_annual[year]`,
   stored as a column on `dim_year`.
-- **Measure:** `Avg Real Rent per Acre` = nominal rent × `deflator_to_base`.
+- **Measure:** `Avg Real Rent per Acre` = nominal rent x `deflator_to_base`.
+
+### 7.1 Series as loaded
+
+| Year | CPI-U | Deflator | Year | CPI-U | Deflator |
+|---|---|---|---|---|---|
+| 2008 | 215.303 | 1.4953 | 2018 | 251.107 | 1.2821 |
+| 2009 | 214.537 | 1.5006 | 2019 | 255.657 | 1.2593 |
+| 2010 | 218.056 | 1.4764 | 2020 | 258.811 | 1.2439 |
+| 2011 | 224.939 | 1.4312 | 2021 | 270.970 | 1.1881 |
+| 2012 | 229.594 | 1.4022 | 2022 | 292.655 | 1.1001 |
+| 2013 | 232.957 | 1.3820 | 2023 | 304.702 | 1.0566 |
+| 2014 | 236.736 | 1.3599 | 2024 | 313.689 | 1.0263 |
+| 2015 | 237.017 | 1.3583 | 2025 | 321.943 | 1.0000 |
+| 2016 | 240.007 | 1.3414 | 2026 | 331.180 | 0.9721 |
+| 2017 | 245.120 | 1.3134 | | | |
+
+### 7.2 Two years are not twelve-month averages
+
+`cpi_u_annual` holds three different averaging windows under a column name that
+says "annual." Both exceptions are disclosed in the article's methodology
+section.
+
+**2025 is an eleven-month average.** BLS did not collect October 2025 owing to
+the lapse in appropriations; the published annual average of 321.943 is the
+mean of the eleven months that exist, which reproduces exactly. Because 2025 is
+the *base*, the effect is a constant multiplier of roughly 0.07% on every real
+figure. Trends are unaffected; the "in 2025 dollars" label is marginally off.
+
+**2026 is a seven-month average.** No annual average exists. The loaded value
+331.180 is the mean of January through July 2026. The alternative was null,
+which would drop all 2,664 of the 2026 fact rows out of every real-dollar
+visual. `crntqm25.pdf` puts collection between mid-February and June, so a 2026
+cash rent is already priced in roughly this window — the partial average is
+arguably better aligned to the survey than a full-year figure would be. Revisit
+when BLS publishes the 2026 annual average (§10.2).
 
 Every chart and article figure states whether it is nominal or real. Trend
-claims spanning 2008–2026 use real dollars; single-year comparisons use
+claims spanning 2008-2026 use real dollars; single-year comparisons use
 nominal.
 
 ---
 
-## 8. Naming conventions
+## 8. Naming conventions and measures
+
+### 8.1 Conventions
 
 | Element | Convention | Example |
 |---|---|---|
@@ -317,14 +479,188 @@ nominal.
 | Source natural keys | `_ansi` or `_code` suffix | `county_ansi`, `ag_district_code` |
 | Measure columns | unit in the name | `rent_usd_per_acre`, `cv_pct` |
 | Coded values | UPPER_SNAKE | `CROPLAND_IRRIGATED`, `SUSPENDED` |
-| DAX measures | PascalCase with spaces | `Avg Rent per Acre` |
+| DAX measures | PascalCase with spaces | `Avg County Rent per Acre` |
 
 DAX measures use spaces so a measure is never mistakable for a column inside a
-formula.
+formula: `[Land Category In Context]` is a measure, `fact_cash_rent[cv_pct]` is
+a column.
 
-Planned measures: `Avg Rent per Acre`, `Avg Real Rent per Acre`,
-`Rent YoY Pct`, `Counties Reporting`, `Low Confidence Share`,
-`Median CV`, `Rent vs State Median`.
+All measures live in `_Measures`, an empty table created via Enter Data with
+its single column hidden. A measure computes identically wherever it is filed,
+so the home table is a filing decision — but scattering measures across two
+fact tables makes them hard to find, and `Rent vs State Median` will reference
+more than one table anyway.
+
+### 8.2 Measures as built
+
+| Measure | Notes |
+|---|---|
+| `Land Category In Context` | Hidden. Returns whether a single land category is in filter context. Extracted so the guard is defined once rather than copied into every measure. |
+| `Avg County Rent per Acre` | Unweighted mean of county estimates. Blanks unless a land category is in context. |
+| `Avg Real Rent per Acre` | `AVERAGEX` deflating each row by its own year, not `AVERAGE x` a single deflator. |
+| `Rent YoY Pct (Unmatched)` | Naive year-over-year. Retained for comparison; **not for publication.** |
+| `Rent YoY Pct (Matched Counties)` | Year-over-year on the constant panel of counties publishing in both years. **The publishable one.** |
+| `Counties Reporting` | `DISTINCTCOUNT` of `geo_key`. Unguarded — see §8.6. Non-additive across land categories by design. |
+| `Low Confidence Share` | Share of estimates with `cv_pct` > 20, denominated on estimates that carry a CV, not on all reporting counties. Blanks before 2021. |
+| `Median CV` | `MEDIANX` over rows with a CV. Median rather than mean because of the right tail (§3.14). Blanks before 2021. |
+| `Rent vs State Median` | County rate against the median county rate in its state, same year and category. Guarded on land category and on a blank county rate. See §8.6. |
+| `State Median CV` | Median CV across the counties publishing in the same state, year and category. Peer context for a single county's CV, which on its own is an uninterpretable percentage. Guarded on land category; blanks before 2021. |
+| `State Median Rent per Acre` | The peer median itself, in dollars — the denominator inside `Rent vs State Median`, surfaced so a table can show it. Iterates the fact, not the dimension (§8.6). |
+| `County Rank in State` | County's rank among counties publishing in its state, year and category. `RANKX`, `DESC`, ties `Skip`. Guarded on land category and on a blank county rate. See §8.6. |
+| `Counties Reporting in State` | Denominator for the rank. Guarded on land category, unlike `Counties Reporting`, because a rank exists only within a category. Deliberately *not* guarded on a blank county rate: in 2008 Iron County has no estimate and 76 Missouri counties do, and 76 is the honest answer. |
+
+All thirteen measures validated against values computed independently from the
+extract — the first nine on 2026-09-12, the four peer-context measures on
+2026-09-13. Regression baseline, county fact only:
+
+| Measure | Scope | Value |
+|---|---|---|
+| `Counties Reporting` | unfiltered | 2,938 |
+| `Counties Reporting` | irr / non-irr / pasture, all years | 1,223 / 2,795 / 2,665 |
+| `Counties Reporting` | 2025, all categories | 2,690 |
+| `Low Confidence Share` | all years, all categories | 2.6% (766 of 29,346) |
+| `Low Confidence Share` | 2025, pastureland | 4.9% |
+| `Median CV` | all years, irr / non-irr / pasture | 6.2 / 5.4 / 6.9 |
+| `Rent vs State Median` | Iron MO, 2025, pastureland | +9.4% (43.5 vs 39.75, n=106) |
+| `Rent vs State Median` | Doña Ana NM, 2026, irrigated | +78.9% (296.0 vs 165.5, n=10) |
+| `State Median CV` | MO pastureland, 2021 / 2023 / 2025 | 5.1 / 6.1 / 5.85 |
+| `State Median Rent per Acre` | MO pastureland, 2020 / 2025 | $35.25 / $39.75 |
+| `County Rank in State` | Iron MO pastureland, 2025 / 2023 | 40 / 106 |
+| `Counties Reporting in State` | MO pastureland, 2008 / 2025 | 76 / 106 |
+
+Both CV measures return blank for every year 2008–2020.
+
+A finding that came out of the two CV measures and belongs in the article:
+median CV rises since 2021 across every category, and it rises on a constant
+panel too — the 1,197 counties publishing pastureland in all six years. But it
+is a drift, not a monotone climb, and v0.3.1 stated it too strongly. The
+pastureland trajectory:
+
+| | 2021 | 2022 | 2023 | 2024 | 2025 | 2026 |
+|---|---|---|---|---|---|---|
+| All publishing counties | 6.0 | 6.5 | 6.9 | 7.1 | **7.4** | 7.3 |
+| Constant panel (n=1,197) | 5.4 | 5.9 | 6.1 | 6.6 | **7.0** | 6.8 |
+| Panel low-confidence share | 0.9% | 1.2% | 1.8% | 2.1% | **3.8%** | 3.1% |
+| Missouri | 5.1 | 5.9 | 6.1 | 5.6 | 5.85 | 5.95 |
+
+**2026 turns down on all three national measures**, and Missouri is not
+monotonic at all — it dips in 2024 and gains under a point across the whole
+period. The v0.3.1 text read "from 2021 to 2026" against the values 5.4 → 7.0
+and 0.9% → 3.8%, which are the 2021 and **2025** figures; 2026 is 6.8 and 3.1%.
+The publishable claim is *up about a point and a half nationally since 2021,
+less in Missouri, easing in 2026* — never "every year."
+
+Composition explains the level gap between the panel and the full set but not
+the trend. The causal half is unverified; `crntqm25.pdf` gives a 47.2% national
+response rate for 2025 but the response-rate trend has not been checked.
+
+### 8.3 Why the first measure is not called `Avg Rent per Acre`
+
+The v0.1.x plan named it `Avg Rent per Acre`. That name asserts "the rent per
+acre." The measure is an unweighted mean of county estimates, in which a county
+renting 400 acres counts the same as one renting 400,000.
+
+The constraint is not fixable with this extract. Weighting requires acres
+rented, and the Quick Stats pull contains rates and CVs only. A properly
+weighted average is not a harder measure to write; it is an impossible one
+without a second data source. So the name carries the caveat: a reader who
+drags `Avg County Rent per Acre` onto a canvas next to a state slicer can see
+that it is a mean across counties, not a state estimate.
+
+### 8.4 Why measures blank instead of answering
+
+`Avg County Rent per Acre` returns `BLANK()` when no land category is in filter
+context. Unfiltered, the arithmetic mean across all 79,064 rows is $73.57 — a
+number that describes nothing, since the three category means are $186.11,
+$103.97 and $23.29 nominal and the grand mean is an artifact of how many rows
+each category happens to contribute.
+
+This is consistent with the rest of the build: make the wrong answer
+unavailable rather than merely discouraged. The same instinct sets Summarize by
+to None on every rate column, so dragging `rent_usd_per_acre` onto a visual
+cannot silently produce a sum of per-acre rates.
+
+### 8.5 Why there are two year-over-year measures
+
+The county panel changes every year (§3.12), so a year-over-year change in the
+unweighted mean mixes rate change with composition change. Non-irrigated
+cropland, all counties versus the constant panel:
+
+| Year | Unmatched | Matched | Gap |
+|---|---|---|---|
+| 2009 | −20.7% | +2.3% | 23.0 pp |
+| 2021 | −0.6% | +2.0% | 2.6 pp |
+| 2025 | +4.0% | +1.3% | 2.7 pp |
+| typical year | | | 0.4–1.5 pp |
+
+2009 is the extreme case: 2008 covered 1,236 non-irrigated counties against
+2,179 in 2009, and the counties it missed were cheaper, so the naive
+calculation reports a 20% collapse in rents that did not occur (§3.3). Ordinary
+years differ by one to three points — small enough to survive review, large
+enough to change a claim. 2025 reads triple its matched value.
+
+`Rent YoY Pct (Matched Counties)` restricts both sides of the comparison to
+counties publishing in both years, via `INTERSECT` and `KEEPFILTERS` so that
+state and category slicers still apply. **Article figures use the matched
+measure.** The unmatched one stays in the model as the comparison that
+justifies the choice.
+
+Both measures test `survey_status` on the current *and* prior year. Testing
+only the prior year is a real bug that was caught during the build: in 2015 the
+prior year (2014) was published and the current year was blank, so
+`DIVIDE ( BLANK() − 84.77, 84.77 )` returned exactly −100% — a total collapse in
+cash rents, rendered without complaint.
+
+### 8.6 Peer groups iterate the fact, not the dimension
+
+`Rent vs State Median` builds a peer group: every county in the same state,
+same year, same land category. Three versions were wrong before one was right,
+and each failure mode is worth keeping.
+
+*Iterate the fact.* The working version is
+`MEDIANX ( VALUES ( fact_cash_rent[geo_key] ), ... )`. The first version
+iterated `VALUES ( dim_geography[geo_key] )` instead. The dimension holds every
+county that ever published anything; the fact, under filter context, holds only
+the counties that published *this* year in *this* category. Missouri has 114
+county entities but 106 pastureland estimates in 2025, and the 8 non-publishers
+entering the iteration moved the median from 39.75 to 39.0 — reporting Iron
+County as 11.5% above its peers instead of 9.4%. This is §3.12 resurfacing in
+the measure layer: any measure that iterates a dimension to build a peer group
+inherits counties that published nothing. The error is small, plausible, and
+invisible without an external check.
+
+*`REMOVEFILTERS` on named columns, not `ALLEXCEPT` on the table.* `ALLEXCEPT`
+operates on the expanded table, so `ALLEXCEPT ( dim_geography, ... )` also
+cleared the `dim_state` filter and silently widened the peer group from one
+state to the nation. Naming the county-identity columns clears exactly those.
+Same rule as §5 design rule 2 — enumerate rather than parse — applied to filter
+context.
+
+*Guard the blank numerator.* Without `NOT ISBLANK ( CountyRent )`, a county
+with no rate in context returns `( BLANK() − median ) / median` = exactly
+−100%, and non-blank values keep those counties in the visual's row set. A
+Missouri-filtered table listed Iberia, Imperial and Iredell at −100%. Identical
+in kind to the suspension-year bug in §8.5: a blank entering arithmetic and
+leaving as a finding.
+
+*Rank ties skip, they do not densify.* `County Rank in State` uses `RANKX` with
+ties set to `Skip` — standard competition ranking, 1, 2, 2, 4 — rather than
+`Dense`, which numbers distinct values instead of positions. This is not
+cosmetic. Pastureland rates are published to the half dollar (§3.13), so ties
+are routine: three Missouri counties sit at exactly $43.50 in 2025. `Skip`
+reports Iron County as 40th of 106, `Dense` reports it as 21st, and 21st of 106
+is a materially different claim to put in front of a producer. `Skip` is also
+the only mode that makes the rank and `Counties Reporting in State`
+interpretable as a pair.
+
+`Counties Reporting` is deliberately *not* guarded on land category, unlike the
+rate measures. A distinct count of counties is well defined across categories —
+"how many counties published any rate" is a real question — where a mean across
+categories is an artifact (§8.4). The guard exists to make wrong answers
+unavailable, not to make every measure behave alike. The cost is that the
+measure is non-additive: 2025 reads 622 + 2,317 + 1,825 across categories
+against a 2,690 total, because most counties publish two. Correct, and worth a
+tooltip in the report layer.
 
 ---
 
@@ -368,12 +704,23 @@ residual-grain change both start in 2021 (§3.4, §3.5). Carry the distinction
 into the article's methodology section, because anyone checking the source
 document will hit the same 2022 sentence.
 
-**10.2 — CPI-U base year.** Set to 2025 pending a complete 2026 annual average.
-Revisit January 2027 or when BLS publishes the 2026 annual figure.
+**10.2 — CPI-U base year and partial-year averages.** Base is 2025, itself an
+eleven-month average (§7.2). 2026 carries a seven-month average. Revisit when
+BLS publishes the 2026 annual figure, and re-evaluate whether 2025 remains the
+right base once a clean twelve-month year is available.
 
 **10.3 — Suppression semantics.** The extract cannot distinguish disclosure
 suppression from non-estimation (§3.6). If the article makes a claim about how
 much data is withheld, that claim needs a caveat or a second source.
+
+**10.4 — Hardcoded source path. Closed 2026-09-12.** `src_cash_rents` now
+opens `SourceFolder` + `SourceFile` as Power Query parameters. The PBIX
+refreshes on any machine where those two values are set.
+
+**10.5 — Scope of the §3 profile figures.** Two errors in v0.1.x had the same
+cause: figures computed across all 46,942 rows and quoted as if county-scoped
+(§3.9, §3.10). Any figure in §3 states its scope; check it before quoting one
+as an expected value for a filtered query.
 
 ---
 
@@ -381,4 +728,11 @@ much data is withheld, that claim needs a caveat or a second source.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.3.2 | 2026-09-13 | Four peer-context measures built and validated for the Iron County interview page: `State Median CV`, `State Median Rent per Acre`, `County Rank in State`, `Counties Reporting in State`. §8.2 baseline extended. §8.6 adds the `Skip`-versus-`Dense` rank tie rule. **§8.2 corrected** — the rising-CV finding was stated as holding "from 2021 to 2026" on figures that are 2021 and 2025; 2026 turns down on every national measure and Missouri is not monotonic. §3.2 adds the statutory cause of the 2015 and 2018 skips; §3.3 adds the Iron County 2008 case and the rule that a coverage gap and a suspension gap must be annotated separately. |
 | 0.1.0 | 2026-08-29 | Initial specification. Profile complete, decisions D1–D10 resolved, open item 10.1 resolved. No transformations executed. |
+| 0.1.1 | 2026-08-29 | §2 corrected: extract filename carries GUID hyphenation on disk (`9A9F55D7-E267-38C6-ACB9-DF106291B5A7.csv`). Same 32 hex characters, same extract. No model impact. |
+| 0.1.2 | 2026-09-04 | §3.9 corrected: 408 of 1,719 real county names are reused across states. The prior 410/1,721 counted `OTHER COUNTIES` and `OTHER (COMBINED) COUNTIES` as county names. Caught during the step 8 branch validation. |
+| 0.3.0 | 2026-09-05 | Five measures built. §8 expanded into conventions, measures-as-built, and the reasoning behind three naming and behaviour decisions. §8.5 records the composition-versus-rate finding and the −100% suspension-year bug. §6.5 adds the **Show items with no data** build requirement — the 19-row calendar is necessary but not sufficient to make the break visible. |
+| 0.3.1 | 2026-09-12 | Remaining four measures built and validated; §8.2 expanded with a regression baseline and the rising-CV finding. §8.6 added — peer groups iterate the fact rather than the dimension, `REMOVEFILTERS` on named columns rather than `ALLEXCEPT` on the table, and the blank-numerator guard. §3.14 scoped: county-scoped pastureland figures are 383/75 against the whole-extract 406/84. 10.4 closed. |
+| 0.2.0 | 2026-09-04 | Reshape built and validated; spec reconciled to the pipeline as constructed. §5 rewritten (two step reorderings, design rules, `chk_row_counts`). §3.8 rewritten — the comma hazard is a locale-dependent misparse, not a silent null. §6.4 `is_chile_producing` deferred. §6.5 `residual_grain` null on suspension years; date-table limitation noted. §6.7 single-direction rationale. §7 CPI series loaded, with 2025 as an eleven-month and 2026 as a seven-month average. Open items 10.4, 10.5 added. |
+| 0.1.3 | 2026-09-04 | §3.10 corrected: real counties carry 23 district codes / 83 names / 306 state-district pairs. The prior 24/84 counted sentinel code `99` from the state-residual rows. Caught during `dim_geography` validation. Both §3.9 and §3.10 errors had the same cause — profile figures computed over the full extract and quoted as if county-scoped. |
