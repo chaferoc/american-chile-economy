@@ -1,12 +1,13 @@
 # USDA NASS County Cash Rents — Data Model Specification
 
-**Version:** 0.3.2
+**Version:** 0.3.3
 **Status:** Model built and validated. Thirteen measures written and validated.
 Two report pages built for the 2026-09-19 producer interview; report layer
-proper not started.
-**Last updated:** 2026-09-13
+proper not started. One published figure withdrawn — see §10.6.
+**Last updated:** 2026-09-14
 **Owner:** Aaron / Heat & Harvest Data Desk
-**Suggested repo path:** `docs/data-model/cash-rents-data-model.md`
+**Repo:** `github.com/chaferoc/american-chile-economy`, at
+`docs/data-model/cash-rents-data-model.md`
 
 ---
 
@@ -40,6 +41,26 @@ size is approximately 242,000 operations, and the target population is farms
 and ranches with $1,000 or more in agricultural sales that rent land on a cash
 basis. Rates are ratio estimates — total rent paid divided by total acres
 rented — not averages of per-operation rates.
+
+### 2.1 Why a rate exists for a year that has not finished
+
+Carry this into every version of the article, in the reader's language and near
+the first chart. The reader has never opened a NASS release and will assume a
+2026 figure is a forecast.
+
+Cash rent is a contracted price, not a harvest outcome. The operator and the
+landowner agree the rate before the crop year starts, so it is knowable in
+advance. NASS collects it mid-February through June, asking what the operation
+*will* pay — the questionnaire is written in the future tense
+(`2024CashRentsQuestionnaire.pdf`, item 4: "What will be the cash rent/lease per
+acre") — and publishes county estimates in August. A 2026 rate published in
+August 2026 is therefore a recorded agreement, not a projection, and nothing
+about it waits on the growing season.
+
+Two consequences the article should state plainly: a rent figure and a
+production figure for the same year are measured at opposite ends of it, and a
+rent series responds to expectations about a year while a production series
+responds to what the weather actually did.
 
 ---
 
@@ -466,6 +487,27 @@ Every chart and article figure states whether it is nominal or real. Trend
 claims spanning 2008-2026 use real dollars; single-year comparisons use
 nominal.
 
+### 7.3 The rule exists because the gap is large, and the endpoint is worse
+
+A nominal line chart of Iron County pastureland was published to social media on
+2026-09-14 spanning 2008-2026, which is the exact case this rule forbids. Two
+distortions compound, and the second is bigger than the first.
+
+*Deflation.* 2009 to 2025, nominal $13.00 to $43.50, is +235%. In 2025 dollars
+it is $19.51 to $43.50, or +123%. Just over half the nominal rise is the
+dollar.
+
+*Endpoint choice.* Ending the same series at 2026 instead of 2025 gives +69%
+nominal and **+10% real** ($19.51 to $21.39) — against +235% from the same
+starting point. One endpoint is a near-quadrupling, the other is essentially
+flat in real terms, and the difference is a single year chosen from a series
+whose last six values are 18.5, 16.0, 13.5, 16.5, 43.5, 22.0.
+
+The stated rule — real dollars for full-period claims — handles the first. It
+does not handle the second. A trend claim on a single county must also state
+its endpoints and survive moving them by a year; where it does not, the claim
+belongs to the endpoint rather than to the trend. See §10.6.
+
 ---
 
 ## 8. Naming conventions and measures
@@ -526,7 +568,9 @@ extract — the first nine on 2026-09-12, the four peer-context measures on
 | `State Median CV` | MO pastureland, 2021 / 2023 / 2025 | 5.1 / 6.1 / 5.85 |
 | `State Median Rent per Acre` | MO pastureland, 2020 / 2025 | $35.25 / $39.75 |
 | `County Rank in State` | Iron MO pastureland, 2025 / 2023 | 40 / 106 |
-| `Counties Reporting in State` | MO pastureland, 2008 / 2025 | 76 / 106 |
+| `Counties Reporting in State` | MO pastureland, 2008 / 2025 / 2026 | 76 / 106 / 104 |
+| `Avg County Rent per Acre` | Iron MO pastureland, 2021-2026 | 18.5 / 16.0 / 13.5 / 16.5 / 43.5 / 22.0 |
+| `Median CV` | Iron MO pastureland, 2021-2026 | 6.0 / 12.0 / 16.1 / 7.0 / 28.7 / 8.3 |
 
 Both CV measures return blank for every year 2008–2020.
 
@@ -724,10 +768,62 @@ as an expected value for a filtered query.
 
 ---
 
+**10.6 — Iron County 2025 pastureland is a low-confidence outlier. Open.**
+The county's published series is 27.0, 20.0, 18.5, 16.0, 13.5, 16.5, **43.5**,
+22.0 for 2019-2026: six years of decline, a 164% single-year jump, then most of
+it given back. The CV moves with it — 7.0 in 2024, **28.7** in 2025, 8.3 in
+2026. 28.7 is the highest CV in the county's series and sits in the `LOW`
+confidence band (D4), so the jump is at least partly estimate noise rather than
+a rent movement. Missouri's median CV that year is 5.85 (§8.2), so this is the
+county, not the state.
+
+The $43.50 figure was published to social media on 2026-09-14 as the headline
+number, with its +9.4% against the state median and its rank of 40 of 106.
+Those three figures are all arithmetically correct and all rest on the least
+reliable observation in the series. **Withdrawn from the article pending
+resolution.**
+
+What this generalizes to, and the reason it is an open item rather than a
+correction: nothing in the model stops a low-confidence estimate from being
+used as a headline. `Low Confidence Share` and `Median CV` exist but describe
+populations, and `Rent vs State Median` and `County Rank in State` are guarded
+on blanks and land category but not on confidence. A single-county figure
+quoted in the article must carry its CV, and a figure in the `LOW` band must
+not carry a claim on its own. Whether that becomes a measure-level guard, a
+report-layer conditional format, or a review rule is undecided.
+
+The three candidate explanations — a changed respondent panel within the
+county, a genuine local rent event, or a model-based estimate pulled by a
+sparse sample — are not separable from this extract. The county panel is not
+published, and §3.6 means a thin year and a suppressed year look identical.
+Aaron's father operates in Iron County and is interviewed on 2026-09-19; **ask
+him directly whether pasture rents there moved in 2025.** A producer's answer
+does not settle a statistical question, but "nothing happened" versus "ground
+got tight when the neighbors' lease came up" points at different halves of it,
+and either is quotable.
+
+**10.7 — Doña Ana irrigated cropland is not a chile rent proxy. Open.**
+The 2026 irrigated figure of $296.00/acre, +78.9% above the NM median of
+$165.50 across 10 counties (§8.2), is sound as a cash rents fact. The
+interpretation attached to it is not: Doña Ana's irrigated acreage is dominated
+by pecans, alfalfa and cotton, and all of New Mexico planted 8,200 acres of
+chile in 2025 (`NM2025_Chile_Production03062026.pdf`) against a county irrigated
+base many times that. Describing this rate as the cost of chile ground
+overstates what the number knows.
+
+Compounding it, Doña Ana chile acreage is withheld as `(D)` for both 2024 and
+2025 in the NM county table, so the county-level rent figure cannot be paired
+with a county-level chile figure at all. The defensible framing is Doña Ana as
+expensive irrigated ground in the county that anchors New Mexico chile — a
+setting, not a cost of production. Revisit at the ERS ingest (§9), which may
+support a state-level chile-acreage-weighted framing that this county-level
+pairing cannot.
+
 ## 11. Changelog
 
 | Version | Date | Change |
 |---|---|---|
+| 0.3.3 | 2026-09-14 | §10.6 added — Iron County 2025 pastureland ($43.50, CV 28.7) is a `LOW`-confidence outlier in a declining series; the figure and its derived rank and vs-median claims are withdrawn from the article, and the general gap is that no measure stops a low-confidence estimate becoming a headline. §10.7 added — Doña Ana irrigated rent is not a chile-ground proxy, and the county's chile acreage is `(D)` in 2024-2025 so the pairing is unavailable. §2.1 added — reader-facing explanation of why a 2026 rate exists before 2026 ends, required in every version of the article. §7.3 added — worked nominal-versus-real figures for Iron County and the endpoint-sensitivity rule that the existing real-dollar rule does not cover. §8.2 baseline extended with the Iron County series and `Counties Reporting in State` for MO pastureland 2026 (104). Header now records the repo URL rather than a suggested path. |
 | 0.3.2 | 2026-09-13 | Four peer-context measures built and validated for the Iron County interview page: `State Median CV`, `State Median Rent per Acre`, `County Rank in State`, `Counties Reporting in State`. §8.2 baseline extended. §8.6 adds the `Skip`-versus-`Dense` rank tie rule. **§8.2 corrected** — the rising-CV finding was stated as holding "from 2021 to 2026" on figures that are 2021 and 2025; 2026 turns down on every national measure and Missouri is not monotonic. §3.2 adds the statutory cause of the 2015 and 2018 skips; §3.3 adds the Iron County 2008 case and the rule that a coverage gap and a suspension gap must be annotated separately. |
 | 0.1.0 | 2026-08-29 | Initial specification. Profile complete, decisions D1–D10 resolved, open item 10.1 resolved. No transformations executed. |
 | 0.1.1 | 2026-08-29 | §2 corrected: extract filename carries GUID hyphenation on disk (`9A9F55D7-E267-38C6-ACB9-DF106291B5A7.csv`). Same 32 hex characters, same extract. No model impact. |
