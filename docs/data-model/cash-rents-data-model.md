@@ -1,10 +1,10 @@
 # USDA NASS County Cash Rents — Data Model Specification
 
-**Version:** 0.3.3
+**Version:** 0.3.4
 **Status:** Model built and validated. Thirteen measures written and validated.
 Two report pages built for the 2026-09-19 producer interview; report layer
 proper not started. One published figure withdrawn — see §10.6.
-**Last updated:** 2026-09-14
+**Last updated:** 2026-09-16
 **Owner:** Aaron / Heat & Harvest Data Desk
 **Repo:** `github.com/chaferoc/american-chile-economy`, at
 `docs/data-model/cash-rents-data-model.md`
@@ -192,7 +192,7 @@ Decisions taken 2026-08-29. Change requires a version bump and an entry in §11.
 |---|---|---|
 | D1 | Fact density | **Sparse.** Drop null-value rows. Dense coverage grids derived in DAX via `CROSSJOIN`, not materialized. |
 | D2 | Residual rows | **Separate table.** `fact_cash_rent_residual`, never mixed into the county fact. |
-| D3 | `dim_year` rows | **19 rows**, 2008–2026 inclusive, with explicit `SUSPENDED` status for 2015 and 2018. Visuals break the line at suspension years. |
+| D3 | `dim_year` rows | **19 rows**, 2008–2026 inclusive, with explicit `SUSPENDED` status for 2015 and 2018. Visuals break the line at suspension years. Status column named `cash_rents_survey_status` per D14. |
 | D4 | CV placement | **Column on the fact.** Plus derived `confidence_band`: `HIGH` <10%, `MODERATE` 10–20%, `LOW` >20%. |
 | D5 | `geo_key` format | **5-character text FIPS** (`state_ansi` + `county_ansi`, zero-padded). Joins natively to Power BI maps, TIGER shapefiles, and other USDA county datasets. |
 | D6 | `dim_state` | **Build now**, before the ERS ingest, as a conformed dimension. |
@@ -200,6 +200,7 @@ Decisions taken 2026-08-29. Change requires a version bump and an entry in §11.
 | D8 | Non-standard entities | **Keep as-is.** No normalization of Hawaii merged entities. |
 | D9 | Load scope | **All 49 states**, full 2008–2026 range. |
 | D10 | Artifact location | **Versioned markdown in a git repo**, current copy kept in the H&H Data Desk project. |
+| D14 | `dim_year` survey status naming | **Rename to `cash_rents_survey_status`.** Taken 2026-09-16. Not moved onto the fact: suspension is a property of a year, not of a rent observation, and moving it would repeat the value 79,064 times. See §6.5. |
 
 ---
 
@@ -267,10 +268,11 @@ above and each was chosen so a source change fails loudly:
    unrecognized rollup label lands in neither stream and the reconciliation
    below stops balancing.
 
-**Load-validation targets.** Implemented as the `chk_row_counts` query, 17
+**Load-validation targets.** Implemented as the `chk_row_counts` query, 19
 assertions covering row counts, the fact/residual reconciliation, CV
-population, referential integrity on all six foreign keys, and `dim_geography`
-key uniqueness. All 17 pass as of 2026-09-04.
+population, referential integrity on all six foreign keys, `dim_geography`
+key uniqueness, and the two `dim_year` suspension-year invariants (D14). All 19
+pass as of 2026-09-16.
 
 | Stream | Rows |
 |---|---|
@@ -354,11 +356,11 @@ Grain: one calendar year. 19 rows, 2008–2026 inclusive.
 |---|---|---|
 | `year_key` | int | PK |
 | `year` | int | |
-| `survey_status` | text | `PUBLISHED`; `SUSPENDED` for 2015 and 2018 |
+| `cash_rents_survey_status` | text | `PUBLISHED`; `SUSPENDED` for 2015 and 2018. Survey-specific by name, by design — see below (D14). |
 | `is_partial_coverage` | bool | true for 2008 only (§3.3) |
 | `cv_published` | bool | false ≤2020, true ≥2021 |
 | `estimation_method` | text | `SURVEY_DIRECT_EXPANSION` ≤2020, `BAYESIAN_SMALL_AREA` ≥2021 — see §10.1 |
-| `residual_grain` | text | `NONE` (2008), `DISTRICT` (2009–2020), `STATE` (2021–2026), **null for 2015 and 2018** |
+| `residual_grain` | nullable text | `NONE` (2008), `DISTRICT` (2009–2020), `STATE` (2021–2026), **null for 2015 and 2018**. Ascribed `type nullable text`, not `type text` — see below. |
 | `cpi_u_annual` | decimal | BLS CPI-U annual average, US city average, all items |
 | `deflator_to_base` | decimal | see §7 |
 
@@ -379,6 +381,23 @@ for those years, because they describe the methodology regime in force, which
 existed whether or not the survey ran. The same reasoning nulls
 `ag_district_code` on `STATE` residual rows, where the source carries sentinel
 code `99` (§3.10).
+
+That null is also why `residual_grain` is ascribed `type nullable text` rather
+than `type text`. The ascription was wrong from the first build and sat
+harmless behind a cached step result; editing the step forced a real
+evaluation and the column returned errors on all 19 rows. A type ascription is
+a claim about contents, and M does not check it until something makes it.
+
+**The status column is named for its survey, not for the calendar.** `dim_year`
+is a conformed dimension and the chile fact attaches to it. Cash Rents was
+suspended in 2015 and 2018; chile published normally in both years. A column
+called `survey_status` reading `SUSPENDED` would be inherited by every chile
+visual, and combined with the **Show items with no data** requirement below it
+would open a gap in a series that has no gap. The general rule: a conformed
+dimension carries attributes true of the calendar, and where an attribute
+belongs to one source, its name must say so. Renamed under D14; the rename
+broke three dependents, none of which the model reported at open — see the §11
+entry for 0.3.4.
 
 **The 19-row design is necessary but not sufficient.** It makes the suspension
 break *representable*; it does not make it *appear*. Power BI drops categories
@@ -649,9 +668,10 @@ state and category slicers still apply. **Article figures use the matched
 measure.** The unmatched one stays in the model as the comparison that
 justifies the choice.
 
-Both measures test `survey_status` on the current *and* prior year. Testing
-only the prior year is a real bug that was caught during the build: in 2015 the
-prior year (2014) was published and the current year was blank, so
+Both measures test `cash_rents_survey_status` on the current *and* prior
+year. Testing only the prior year is a real bug that was caught during the
+build: in 2015 the prior year (2014) was published and the current year was
+blank, so
 `DIVIDE ( BLANK() − 84.77, 84.77 )` returned exactly −100% — a total collapse in
 cash rents, rendered without complaint.
 
@@ -823,6 +843,7 @@ pairing cannot.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.3.4 | 2026-09-16 | **D14 ratified and executed** — `dim_year.survey_status` renamed to `cash_rents_survey_status`, so the conformed dimension no longer asserts a Cash Rents suspension over chile years that published normally. The rename surfaced three dependents, none of which the model reported on open: the `AddedResidualGrain` conditional column lost its first clause and returned errors on all 19 rows; that column's `type text` ascription was invalid against the nulls it returns by design and is now `type nullable text`; and `Rent YoY Pct (Matched Counties)` and `Rent YoY Pct (Unmatched)` both referenced the old column name and were broken in a file that opened without complaint. §6.5 records the conformed-dimension naming rule and the ascription. §8.5 updated to the new name. `chk_row_counts` extended to 19 assertions — suspension row count and `residual_grain` null count, both expecting 2 — because no existing assertion caught any of the three breaks. |
 | 0.3.3 | 2026-09-14 | §10.6 added — Iron County 2025 pastureland ($43.50, CV 28.7) is a `LOW`-confidence outlier in a declining series; the figure and its derived rank and vs-median claims are withdrawn from the article, and the general gap is that no measure stops a low-confidence estimate becoming a headline. §10.7 added — Doña Ana irrigated rent is not a chile-ground proxy, and the county's chile acreage is `(D)` in 2024-2025 so the pairing is unavailable. §2.1 added — reader-facing explanation of why a 2026 rate exists before 2026 ends, required in every version of the article. §7.3 added — worked nominal-versus-real figures for Iron County and the endpoint-sensitivity rule that the existing real-dollar rule does not cover. §8.2 baseline extended with the Iron County series and `Counties Reporting in State` for MO pastureland 2026 (104). Header now records the repo URL rather than a suggested path. |
 | 0.3.2 | 2026-09-13 | Four peer-context measures built and validated for the Iron County interview page: `State Median CV`, `State Median Rent per Acre`, `County Rank in State`, `Counties Reporting in State`. §8.2 baseline extended. §8.6 adds the `Skip`-versus-`Dense` rank tie rule. **§8.2 corrected** — the rising-CV finding was stated as holding "from 2021 to 2026" on figures that are 2021 and 2025; 2026 turns down on every national measure and Missouri is not monotonic. §3.2 adds the statutory cause of the 2015 and 2018 skips; §3.3 adds the Iron County 2008 case and the rule that a coverage gap and a suspension gap must be annotated separately. |
 | 0.1.0 | 2026-08-29 | Initial specification. Profile complete, decisions D1–D10 resolved, open item 10.1 resolved. No transformations executed. |
