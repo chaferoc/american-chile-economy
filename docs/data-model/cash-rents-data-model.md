@@ -1,9 +1,10 @@
 # USDA NASS County Cash Rents — Data Model Specification
 
-**Version:** 0.3.4
-**Status:** Model built and validated. Thirteen measures written and validated.
-Two report pages built for the 2026-09-19 producer interview; report layer
-proper not started. One published figure withdrawn — see §10.6.
+**Version:** 0.4.0
+**Status:** Both stars built and validated — county cash rents and state chile.
+Thirteen measures written and validated, all on the cash rents star; no chile
+measures yet. Two report pages built for the 2026-09-19 producer interview;
+report layer proper not started. One published figure withdrawn — see §10.6.
 **Last updated:** 2026-09-16
 **Owner:** Aaron / Heat & Harvest Data Desk
 **Repo:** `github.com/chaferoc/american-chile-economy`, at
@@ -18,8 +19,9 @@ cash rents series as loaded into the "American Chile Economy" Power BI report.
 It is the authoritative record of grain, keys, naming, and modeling decisions,
 and is written to be quotable in the article's methodology section.
 
-Scope of this version: the county cash rents fact and its dimensions. The ERS
-chile pepper series is designed for but not ingested; see §9.
+Scope of this version: the county cash rents fact and its dimensions (§3–§8),
+and the NASS state-level chile fact (§9). The ERS national chile series is
+profiled but not ingested; see §9.9.
 
 ---
 
@@ -186,7 +188,8 @@ residual row.
 
 ## 4. Decision log
 
-Decisions taken 2026-08-29. Change requires a version bump and an entry in §11.
+D1–D10 taken 2026-08-29; D11–D15 during the builds they govern. Change requires
+a version bump and an entry in §11.
 
 | ID | Decision | Resolution |
 |---|---|---|
@@ -200,7 +203,11 @@ Decisions taken 2026-08-29. Change requires a version bump and an entry in §11.
 | D8 | Non-standard entities | **Keep as-is.** No normalization of Hawaii merged entities. |
 | D9 | Load scope | **All 49 states**, full 2008–2026 range. |
 | D10 | Artifact location | **Versioned markdown in a git repo**, current copy kept in the H&H Data Desk project. |
+| D11 | `fact_chile_state` shape | **Wide.** One row per state × year with six typed measure columns plus one `suppression_code`. Taken 2026-09-16. A metric dimension would need one value column carrying five different units, which §9.1 forbids. |
+| D12 | `OTHER STATES` chile rows | **Separate table.** `fact_chile_state_residual`, per D2's precedent. Four rows. |
+| D13 | `is_chile_producing` | **Delete, do not build.** §6.4 deferred it to this ingest. The producing set moves — Arizona left after 2018, Ohio arrived in 2024 — so a boolean freezes something that changes, and the fact's own contents answer the question. |
 | D14 | `dim_year` survey status naming | **Rename to `cash_rents_survey_status`.** Taken 2026-09-16. Not moved onto the fact: suspension is a property of a year, not of a rent observation, and moving it would repeat the value 79,064 times. See §6.5. |
+| D15 | Chile utilization family | **Deferred.** Fresh market, processing, not sold and utilized production are out of scope for v0.4.0; see §9.8. |
 
 ---
 
@@ -268,11 +275,12 @@ above and each was chosen so a source change fails loudly:
    unrecognized rollup label lands in neither stream and the reconciliation
    below stops balancing.
 
-**Load-validation targets.** Implemented as the `chk_row_counts` query, 19
-assertions covering row counts, the fact/residual reconciliation, CV
-population, referential integrity on all six foreign keys, `dim_geography`
-key uniqueness, and the two `dim_year` suspension-year invariants (D14). All 19
-pass as of 2026-09-16.
+**Load-validation targets.** Implemented as the `chk_row_counts` query, 28
+assertions covering row counts, both fact/residual reconciliations, CV
+population, referential integrity on all nine foreign keys, `dim_geography`
+and `fact_chile_state` key uniqueness, the two `dim_year` suspension-year
+invariants (D14), and the chile suppression count (§9.4). All 28 pass as of
+2026-09-16.
 
 | Stream | Rows |
 |---|---|
@@ -728,30 +736,268 @@ tooltip in the report layer.
 
 ---
 
-## 9. Forward design: ERS chile pepper fact
+## 9. Chile pepper facts
 
-Not ingested. Designed for so the second star can attach without a refactor.
+Built and validated 2026-09-16. This section replaces the forward design
+written 2026-08-29, which was wrong in one structural way: it planned a single
+`fact_chile_pepper` at state × year sourced from the ERS yearbook. The yearbook
+has no state dimension, so the conformed `dim_state` join it was designed
+around could not be satisfied from that source at all.
 
-Source: USDA ERS *U.S. Bell and Chile Pepper Statistics* / Vegetables and
-Pulses Yearbook (`vegetablespulsesyearbooktables.xlsx`).
+### 9.1 Two facts, not one
 
-Planned `fact_chile_pepper` grain: state × year × metric, joining on
-`state_key` and `year_key`. The two conformed dimensions — `dim_state` and
-`dim_year` — are what make a cross-fact visual legitimate rather than a lookup
-hack.
+| Fact | Grain | Source | Status |
+|---|---|---|---|
+| `fact_chile_state` | state × year | NASS Quick Stats, five extracts | built, 62 rows |
+| `fact_chile_state_residual` | `OTHER STATES` × year | same | built, 4 rows |
+| `fact_chile_national` | year | ERS Yearbook Table 54 | not built, §9.6 |
 
-Two constraints recorded now:
+The state and national series are not unionable. National is farm-weight
+million pounds with imports, exports and per-capita availability; state is
+acres, cwt and dollars. They answer different questions and share only
+`dim_year`.
+
+Two constraints carried forward from the original §9, both still binding:
 
 1. **Do not roll cash rent up to state inside the model** to match chile grain.
    Averaging county rates without acreage weights does not reproduce the state
    estimate NASS publishes. Use NASS's own state-level series if state rent is
    needed.
-2. **Do not share a fact table across units.** $/acre, acres, tons, $/ton, and
+2. **Do not share a fact table across units.** $/acre, acres, tons, $/ton and
    $1,000 of value do not share a grain or a unit.
 
-The ERS workbook also carries trade-by-country and per-capita-use series at
-country × year and national × year grain. Those need their own fact tables and
-are out of scope for this version.
+### 9.2 Source extracts
+
+Five Quick Stats CSVs, Commodity = PEPPERS, Geographic Level = State, 2008–2025.
+Quick Stats exports one data item per download, which is why there are five.
+All five live in `data/raw` alongside the cash rents extract and resolve through
+the existing `SourceFolder` parameter; filenames are literals in each staging
+query rather than parameters, because the filename is the query's identity.
+
+| Metric | File (GUID) | Raw rows | Filtered |
+|---|---|---|---|
+| `acres_planted` | `6B8B4B57-A8C4-30E9-BBF9-F8D1EDEEBF18` | 65 | 65 |
+| `acres_harvested` | `CA70B843-82A4-3C22-BE2A-CF7C9BB6B0CC` | 289 | 66 |
+| `yield_cwt_per_acre` | `3CDFA62B-373A-3A19-95CB-881207B34387` | 65 | 65 |
+| `price_usd_per_cwt` | `76EDE65A-E714-3F81-AF90-358FED3B79C2` | 81 | 65 |
+| `production_cwt` | `0909B7A5-83F4-37C2-8555-C2F43EF0D893` | 1,880 | 65 |
+| `production_value_usd` | same file | 1,880 | 65 |
+
+A sixth download, `CA70B843-…__1_.csv`, is a byte-identical duplicate of the
+acres-harvested file and is discarded.
+
+### 9.3 Ingest filters are per-extract, and the third one is the trap
+
+Four filters take each extract to one clean row per state × year:
+
+1. `Program = SURVEY` — drops Census of Agriculture rows.
+2. `Domain = TOTAL` — drops `ORGANIC STATUS` breakdowns.
+3. `Period` — **`MARKETING YEAR` for price, `YEAR` for everything else.**
+4. `Data Item` — the exact item string.
+
+Each filter does real work in exactly one extract and is a no-op in the others.
+`SURVEY` takes acres harvested from 289 rows to 66. `MARKETING YEAR` takes price
+from 81 to 65. `Data Item` takes production from 1,068 to 65. The others pass
+through untouched *today*, and they stay in the query anyway: a re-pull that
+starts returning Census rows or organic breakdowns then fails loudly instead of
+silently doubling a series.
+
+The price trap is the one that would corrupt quietly. Price publishes under both
+periods — 65 rows at `MARKETING YEAR` covering the whole range, plus a 16-row
+`YEAR` series for 2008–2011 only, with different values. New Mexico 2011 is
+$33.90 marketing-year against $23.00 year. Taking both yields 16 duplicate
+state-years; taking the wrong one yields a short series that looks fine.
+**Check value: New Mexico 2011 price must read 33.9.**
+
+`Period` was a dead column in the cash rents extract, dropped at ingest under
+§3.1. Here it is a filter key. The dead-column list is a property of one
+extract, not of Quick Stats — re-profile per source rather than reusing §3.1.
+
+### 9.4 Suppression is explicit, whole-row, and padded
+
+Unlike the cash rents extract, where all suppression collapsed to blank and the
+distinction was unrecoverable (§3.6), Quick Stats writes `(D)` and `(Z)` as
+literal strings in `Value`. `(D)` is withheld for disclosure; `(Z)` is a value
+below half the publication unit. The distinction survives and the model keeps
+it.
+
+**Suppression is whole-row.** Five state-years carry `(D)`, and in every one of
+them all six metrics are withheld together: California 2025, Ohio 2024 and 2025,
+Texas 2024 and 2025. No state-year has some metrics withheld and others
+published. This is what makes D11's wide shape clean — one `suppression_code`
+column on the row covers every case in the data, rather than six paired columns.
+It is a property of the current extract, not a guarantee, which is why
+`chk_row_counts` asserts the count of 5.
+
+**The suppression strings carry a leading space.** The raw value is `" (D)"`,
+not `"(D)"`. This is a distinct hazard from §3.8's commas and it fails
+differently: a comma makes `Number.FromText` misparse under some locales, where
+the leading space makes an equality test silently not match, so both the
+suppression detection and the cast guard fall through and the row errors. It is
+handled once, by a `Text.Trim` on `value_raw` in `src_chile_state` after the
+append, so every column and any future extract inherits it.
+
+### 9.5 Pipeline as built
+
+Six staging queries, none loaded to the model. Each reads one file, applies its
+four filters, removes the seventeen dead columns by name, stamps a `metric`
+literal, and renames to `year_key` / `state_name` / `state_key` / `value_raw`.
+
+`value_raw` stays text through staging. Casting at the source would destroy the
+`(D)` / `(Z)` distinction §9.4 exists to preserve.
+
+`metric` is stamped as a literal per query rather than parsed from the
+`Data Item` string at pivot time. Same rule as §5 design rule 2: enumerate
+rather than parse.
+
+The seventeen dead columns are dropped with `Table.RemoveColumns` naming them,
+not `Table.SelectColumns` naming the four survivors, so a new NASS column
+arrives visible instead of vanishing. §5 design rule 1.
+
+**Staging query `src_chile_state`** (not loaded):
+
+| # | Step | Rows out |
+|---|---|---|
+| 1 | `Table.Combine` of the six staging queries | 391 |
+| 2 | `Text.Trim` on `value_raw` (§9.4) | 391 |
+| 3 | `Table.Pivot` on `metric`, no aggregation | **66** |
+
+Pivot takes no aggregation function, so a duplicate state × year × metric
+becomes an Error rather than a silent sum — same choice as step 7 of
+`src_cash_rents`.
+
+**Branch queries**, each a reference to `src_chile_state`:
+
+| Query | Filter | Rows |
+|---|---|---|
+| `fact_chile_state` | `state_key` present — structural | 62 |
+| `fact_chile_state_residual` | `state_name = "OTHER STATES"` — by label | 4 |
+
+The two filters use different tests deliberately. A row NASS labels some third
+way lands in neither stream and the 62 + 4 = 66 reconciliation stops balancing,
+rather than one filter quietly claiming it.
+
+Each branch then derives `suppression_code` from the six raw values, and casts
+the six columns with commas stripped and `en-US` passed to `Number.FromText`
+explicitly rather than relying on ambient culture — §3.8's hazard, handled the
+same way here.
+
+### 9.6 `fact_chile_state`
+
+Grain: one state × year. 62 rows, five states.
+
+| Column | Type | Null | Note |
+|---|---|---|---|
+| `state_key` | text(2) | no | FK → `dim_state`, zero-padded FIPS |
+| `year_key` | int | no | FK → `dim_year` |
+| `state_name` | text | no | carried for readability |
+| `acres_planted` | nullable number | yes | null where withheld |
+| `acres_harvested` | nullable number | yes | |
+| `yield_cwt_per_acre` | nullable number | yes | |
+| `price_usd_per_cwt` | nullable number | yes | marketing year (§9.3) |
+| `production_cwt` | nullable number | yes | |
+| `production_value_usd` | nullable number | yes | |
+| `suppression_code` | nullable text | yes | `D`, `Z`, or null. 5 rows carry `D` |
+
+Every measure column is `nullable number` and `suppression_code` is
+`nullable text`. Ascribing a non-nullable type to a column that returns null by
+design is the defect `residual_grain` carried from its first build until
+2026-09-16; it does not fail at write time, only when something forces a real
+evaluation.
+
+The Quick Stats state codes match `dim_state[state_key]` without repair — both
+are zero-padded two-character FIPS. `orphan state_key (chile fact)` asserts it.
+This is what D6's decision to build `dim_state` as a conformed dimension before
+the chile ingest bought.
+
+**Coverage is intermittent, and that is not production ending.**
+
+| State | Years published |
+|---|---|
+| New Mexico | 2008–2025, all 18 |
+| California | 2008–2025, all 18 |
+| Arizona | 2008–2018 only |
+| Texas | 2008–2018, then 2024–2025 |
+| Ohio | 2024–2025 only |
+
+Arizona and Texas going quiet after 2018 is publication intermittency, the same
+hazard as §3.12. A line chart renders it as a collapse to zero unless handled.
+D13 deletes `is_chile_producing` for exactly this reason: the producing set
+moves, so a boolean freezes a moment.
+
+### 9.7 `fact_chile_state_residual`
+
+Grain: one `OTHER STATES` × year. 4 rows — 2016, 2020, 2024, 2025.
+
+No `state_key`. The column is blank on every residual row and is dropped rather
+than carried as an empty string, because a blank that looks like a key is the
+§3.6 trap. The residual joins `dim_year` only, which is one relationship where
+`fact_cash_rent_residual` has two.
+
+**Two of the four rows are published zeros, not withholdings.** 2016 reads 0 on
+all six metrics; 2020 reads 0 on acres harvested and null on the other five.
+`suppression_code` is null on both, correctly — a zero is a published estimate
+and a null is an absence, and the model must not let them share a token.
+
+The 2016 row therefore carries a price of $0.00/cwt and a yield of 0 cwt/acre.
+Neither is a rate. They are the arithmetic shadow of zero acres, and any measure
+that averages price or yield must exclude the residual. D12's table separation
+enforces this structurally rather than by convention, which is the same argument
+D2 made for cash rents.
+
+### 9.8 Deferred: the utilization family (D15)
+
+The production extract carries eight `PEPPERS, CHILE` items, not two. Six are a
+utilization family and are out of scope for v0.4.0:
+
+| Item family | Years | Rows | Withheld |
+|---|---|---|---|
+| Core production (cwt, $) | 2008–2025 | 65 each | 5 of 65 |
+| Fresh market (cwt, $) | 2016–2025 | 38 each | 16 of 38 |
+| Processing (tons, $) | 2016–2025 | 38 each | 16 of 38 |
+| Not sold, utilized (cwt) | 2016–2025 | 33 each | 5 of 33 |
+
+The family starts in 2016, is 42% withheld on four of its six items, and
+introduces tons as a third unit. It answers the fresh-versus-processing
+question, which is a live article angle, but at a different grain and coverage
+from the core six. It gets its own fact when it is taken, not a widening of this
+one.
+
+### 9.9 Not built: `fact_chile_national`
+
+Source: ERS *U.S. Bell and Chile Pepper Statistics* / Vegetables and Pulses
+Yearbook (`vegetablespulsesyearbooktables.xlsx`), sheet
+`Table 54-Chili Peppers, Pr`. 58 rows, 1980–2025, national only. Table 32 is the
+bell series.
+
+Three things to settle before it is built, all recorded during profiling:
+
+1. **Table 54 has three series breaks and a preliminary year**, all footnoted on
+   the sheet: production source changes from ERS to NASS estimates in 2018; the
+   price source changes after 1999; the dry-basis conversion factor changes from
+   5.0 to 8.0 in 1988; 2025 is flagged preliminary. These need explicit flags in
+   the same spirit as `dim_year.cash_rents_survey_status` — not silent joins
+   across a definition change.
+2. **ERS deflates with a different index.** Table 54's constant-dollar column
+   uses the GDP implicit price deflator at 2017=100; this model uses CPI-U at
+   2025=100 (§7). Two real-dollar bases in one report is a footgun. Drop the ERS
+   column and deflate the nominal price with the existing `deflator_to_base`.
+3. The workbook also carries trade-by-country and per-capita-use series at
+   country × year and national × year grain. Those are further facts again, not
+   columns on this one.
+
+### 9.10 Relationships
+
+```
+dim_state (1) ──< (*) fact_chile_state
+dim_year  (1) ──< (*) fact_chile_state
+dim_year  (1) ──< (*) fact_chile_state_residual
+```
+
+Three relationships, all one-to-many, all single cross-filter direction, all
+active. Ten in the file total. Single direction matters more here than it did in
+§6.7, not less: `dim_year` now reaches four fact tables, so a single
+bidirectional edge would let a slicer on one fact reshape three others.
 
 ---
 
@@ -843,6 +1089,7 @@ pairing cannot.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.4.0 | 2026-09-16 | **Second star built.** `fact_chile_state` (62 rows) and `fact_chile_state_residual` (4 rows) ingested from five NASS Quick Stats extracts, joined to the conformed `dim_state` and `dim_year` with no key repair needed. **§9 rewritten from forward design to as-built** — the 2026-08-29 design was structurally wrong, planning one state-level fact sourced from the ERS yearbook, which has no state dimension; state chile comes from Quick Stats and the ERS national series becomes a separate unbuilt fact (§9.9). D11 (wide shape, six measure columns plus `suppression_code`), D12 (`OTHER STATES` to its own table), D13 (`is_chile_producing` deleted rather than built) and D15 (utilization family deferred) ratified. Three findings recorded: suppression is whole-row and coincident across all six metrics, which is what makes the wide shape clean (§9.4); `(D)` strings carry a leading space, a hazard distinct from §3.8's commas because it fails as a silent non-match rather than a misparse (§9.4); the residual's 2016 and 2020 rows are published zeros, so its price and yield are not rates and it must be excluded from any average (§9.7). `chk_row_counts` extended to 28 assertions. `chile-ingest-profile.md` folded in and retired. |
 | 0.3.4 | 2026-09-16 | **D14 ratified and executed** — `dim_year.survey_status` renamed to `cash_rents_survey_status`, so the conformed dimension no longer asserts a Cash Rents suspension over chile years that published normally. The rename surfaced three dependents, none of which the model reported on open: the `AddedResidualGrain` conditional column lost its first clause and returned errors on all 19 rows; that column's `type text` ascription was invalid against the nulls it returns by design and is now `type nullable text`; and `Rent YoY Pct (Matched Counties)` and `Rent YoY Pct (Unmatched)` both referenced the old column name and were broken in a file that opened without complaint. §6.5 records the conformed-dimension naming rule and the ascription. §8.5 updated to the new name. `chk_row_counts` extended to 19 assertions — suspension row count and `residual_grain` null count, both expecting 2 — because no existing assertion caught any of the three breaks. |
 | 0.3.3 | 2026-09-14 | §10.6 added — Iron County 2025 pastureland ($43.50, CV 28.7) is a `LOW`-confidence outlier in a declining series; the figure and its derived rank and vs-median claims are withdrawn from the article, and the general gap is that no measure stops a low-confidence estimate becoming a headline. §10.7 added — Doña Ana irrigated rent is not a chile-ground proxy, and the county's chile acreage is `(D)` in 2024-2025 so the pairing is unavailable. §2.1 added — reader-facing explanation of why a 2026 rate exists before 2026 ends, required in every version of the article. §7.3 added — worked nominal-versus-real figures for Iron County and the endpoint-sensitivity rule that the existing real-dollar rule does not cover. §8.2 baseline extended with the Iron County series and `Counties Reporting in State` for MO pastureland 2026 (104). Header now records the repo URL rather than a suggested path. |
 | 0.3.2 | 2026-09-13 | Four peer-context measures built and validated for the Iron County interview page: `State Median CV`, `State Median Rent per Acre`, `County Rank in State`, `Counties Reporting in State`. §8.2 baseline extended. §8.6 adds the `Skip`-versus-`Dense` rank tie rule. **§8.2 corrected** — the rising-CV finding was stated as holding "from 2021 to 2026" on figures that are 2021 and 2025; 2026 turns down on every national measure and Missouri is not monotonic. §3.2 adds the statutory cause of the 2015 and 2018 skips; §3.3 adds the Iron County 2008 case and the rule that a coverage gap and a suspension gap must be annotated separately. |
