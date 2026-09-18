@@ -1,11 +1,12 @@
 # USDA NASS County Cash Rents — Data Model Specification
 
-**Version:** 0.4.0
-**Status:** Both stars built and validated — county cash rents and state chile.
-Thirteen measures written and validated, all on the cash rents star; no chile
-measures yet. Two report pages built for the 2026-09-19 producer interview;
-report layer proper not started. One published figure withdrawn — see §10.6.
-**Last updated:** 2026-09-16
+**Version:** 0.5.0
+**Status:** Three facts built and validated — county cash rents, state chile, and
+chile Census of Agriculture. Thirteen measures written and validated, all on the
+cash rents star; no chile measures yet. Two report pages built for the 2026-09-19
+producer interview; report layer proper not started. `chk_row_counts` at 35
+assertions, all passing. §10.6 resolved.
+**Last updated:** 2026-09-17
 **Owner:** Aaron / Heat & Harvest Data Desk
 **Repo:** `github.com/chaferoc/american-chile-economy`, at
 `docs/data-model/cash-rents-data-model.md`
@@ -208,6 +209,9 @@ a version bump and an entry in §11.
 | D13 | `is_chile_producing` | **Delete, do not build.** §6.4 deferred it to this ingest. The producing set moves — Arizona left after 2018, Ohio arrived in 2024 — so a boolean freezes something that changes, and the fact's own contents answer the question. |
 | D14 | `dim_year` survey status naming | **Rename to `cash_rents_survey_status`.** Taken 2026-09-16. Not moved onto the fact: suspension is a property of a year, not of a rent observation, and moving it would repeat the value 79,064 times. See §6.5. |
 | D15 | Chile utilization family | **Deferred.** Fresh market, processing, not sold and utilized production are out of scope for v0.4.0; see §9.8. |
+| D16 | Census of Agriculture chile rows | **Build as a third fact.** `fact_chile_census`, state × census year, from the Census rows already present in the acres-harvested extract. Taken 2026-09-17. It is the only chile source with complete 50-state coverage, and it is the documented input to the program review that decides survey coverage (§9.12) — the one series not shaped by the decisions the article is about. See §9.11. |
+| D17 | `dim_state` grain | **Widen from the cash rents state list to the union of states appearing in any fact.** Taken 2026-09-17. Was 49. Alaska has no cash rents rows but does have a Census chile row; cutting it would have dropped a state to fit a dimension built for a different survey, which is the error §9.11 exists to avoid. 50 rows. Alaska shows blank rents in a state slicer — correct, and the price of the dimension meaning what its name says. |
+| D18 | Low-confidence figures | **Publish with the CV attached. Never suppress.** Taken 2026-09-17, resolving §10.6. A measure-level guard that blanked `LOW`-band values would hide the observation the reporting exists to investigate, and would put blanks back into arithmetic — the §8.5 and §8.6 failure mode. Enforced as a review rule and report-layer conditional formatting, not as a measure. |
 
 ---
 
@@ -345,16 +349,24 @@ No SCD handling: district assignment is stable across the full period (§3.11).
 
 ### 6.4 `dim_state`
 
-Grain: one state. 49 rows. Conformed dimension shared with the future chile
-fact.
+Grain: one state. **50 rows** (D17). Conformed dimension shared with all three
+facts.
+
+Rows are sourced from `src_cash_rents`, which covers 49 states — NASS does not
+run the Cash Rents Survey in Alaska. Alaska is appended as a literal after the
+key padding step, then joined to the attribute table like any other row. The
+dimension's grain is therefore the union of states appearing in any fact, not
+the cash rents state list; see D17 for why that distinction is load-bearing.
 
 | Column | Type | Note |
 |---|---|---|
 | `state_key` | text(2) | PK, state ANSI/FIPS |
 | `state_name` | text | |
 | `state_abbr` | text(2) | |
-| `nass_region` | text | Northeast, Lake, Corn Belt, Northern Plains, Appalachian, Southeast, Delta, Southern Plains, Mountain, Pacific — per `crntqm25.pdf` |
-| `is_chile_producing` | bool | **not yet built.** Deliberately absent rather than defaulted to false; set at ERS ingest, when it will also be clear whether a boolean or a first-production-year is the right shape. |
+| `nass_region` | text | Northeast, Lake, Corn Belt, Northern Plains, Appalachian, Southeast, Delta, Southern Plains, Mountain, Pacific — per `crntqm25.pdf`. Alaska is `Pacific`, following Hawaii. |
+
+`is_chile_producing` was deferred here in v0.2.0 and **deleted under D13** rather
+than built. The producing set moves, so a boolean freezes something that changes.
 
 ### 6.5 `dim_year`
 
@@ -750,7 +762,8 @@ around could not be satisfied from that source at all.
 |---|---|---|---|
 | `fact_chile_state` | state × year | NASS Quick Stats, five extracts | built, 62 rows |
 | `fact_chile_state_residual` | `OTHER STATES` × year | same | built, 4 rows |
-| `fact_chile_national` | year | ERS Yearbook Table 54 | not built, §9.6 |
+| `fact_chile_census` | state × census year | NASS Quick Stats, Census program | built, 150 rows |
+| `fact_chile_national` | year | ERS Yearbook Table 54 | not built, §9.9 |
 
 The state and national series are not unionable. National is farm-weight
 million pounds with imports, exports and per-capita availability; state is
@@ -813,6 +826,14 @@ state-years; taking the wrong one yields a short series that looks fine.
 §3.1. Here it is a filter key. The dead-column list is a property of one
 extract, not of Quick Stats — re-profile per source rather than reusing §3.1.
 
+**Filter 1 is now load-bearing in a second sense.** `Program` was written as a
+guard against Census rows contaminating a survey series. Since D16 it is also
+the switch that selects between two facts built from the same file:
+`src_chile_acres_harvested` filters `SURVEY` and feeds `fact_chile_state`;
+`fact_chile_census` filters `CENSUS` and stands alone (§9.11). Neither is a
+subset of the other and they must never be unioned — different populations,
+different instruments, different collection years.
+
 ### 9.4 Suppression is explicit, whole-row, and padded
 
 Unlike the cash rents extract, where all suppression collapsed to blank and the
@@ -836,6 +857,13 @@ the leading space makes an equality test silently not match, so both the
 suppression detection and the cast guard fall through and the row errors. It is
 handled once, by a `Text.Trim` on `value_raw` in `src_chile_state` after the
 append, so every column and any future extract inherits it.
+
+**`(Z)` occurs, and only in the Census rows.** The survey extracts contain no
+`(Z)` at all, so v0.4.0 recorded the distinction without exercising it.
+`fact_chile_census` carries one: a 2017 state row whose harvested acreage is
+below half the publication unit. It is a real, very small observation, not a
+withholding, and classifying it as missing would silently drop a state. Both
+codes are trimmed and classified in the same expression; see §9.11.
 
 ### 9.5 Pipeline as built
 
@@ -992,12 +1020,148 @@ Three things to settle before it is built, all recorded during profiling:
 dim_state (1) ──< (*) fact_chile_state
 dim_year  (1) ──< (*) fact_chile_state
 dim_year  (1) ──< (*) fact_chile_state_residual
+dim_state (1) ──< (*) fact_chile_census
+dim_year  (1) ──< (*) fact_chile_census
 ```
 
-Three relationships, all one-to-many, all single cross-filter direction, all
-active. Ten in the file total. Single direction matters more here than it did in
-§6.7, not less: `dim_year` now reaches four fact tables, so a single
-bidirectional edge would let a slicer on one fact reshape three others.
+Five relationships, all one-to-many, all single cross-filter direction, all
+active. **Twelve in the file total.** Single direction matters more here than it
+did in §6.7, not less: `dim_year` now reaches five fact tables, so a single
+bidirectional edge would let a slicer on one fact reshape four others.
+
+`dim_year` reaching `fact_chile_census` has a consequence worth stating rather
+than discovering. That fact exists on three years only. A year slicer set to
+anything else empties it, and any visual placing census beside survey is putting
+a three-point series next to an eighteen-point one. Correct on a map page,
+a trap on a line chart.
+
+### 9.11 `fact_chile_census`
+
+Grain: one state × census year. 150 rows — 50 states × 2012, 2017, 2022.
+Built 2026-09-17 under D16.
+
+| Column | Type | Null | Note |
+|---|---|---|---|
+| `year_key` | int | no | FK → `dim_year`. **Whole number, not text** — see below |
+| `state_key` | text(2) | no | FK → `dim_state`, state ANSI, zero-padded |
+| `state_name` | text | no | |
+| `acres_harvested` | int | yes | Null where `suppression_code` is set |
+| `suppression_code` | text | yes | `D`, `Z`, or null |
+
+**Why it exists.** Every other chile series in this model is shaped by the thing
+the article is about. The survey covers whichever states NASS currently
+estimates, so a national total built from it moves when the program moves, not
+only when the crop does. The Census covers all fifty states on a fixed
+five-year cadence and is the documented input to the review that sets survey
+coverage (§9.12). It is the only chile series here that can carry a national
+claim without the claim being partly about NASS's budget.
+
+**Construction.** A duplicate of `src_chile_acres_harvested` with
+`FilterProgram` repointed from `SURVEY` to `CENSUS`, loaded rather than staged.
+The other three filters are unchanged and all do work: `Domain = TOTAL` drops 73
+rows of `AREA HARVESTED, FRESH MARKET & PROCESSING` and `OPERATORS` breakdowns,
+taking 223 Census rows to 150. Then two added columns:
+
+```
+suppression_code = let v = Text.Trim([value_raw]) in
+                   if v = "(D)" then "D" else if v = "(Z)" then "Z" else null
+
+acres_harvested  = if [suppression_code] = null
+                   then Number.FromText(Text.Remove(Text.Trim([value_raw]), {","}))
+                   else null
+```
+
+Both §3.8's commas and §9.4's leading space are handled in the one expression.
+Fifteen of the 150 values carry a thousands separator, so omitting
+`Text.Remove` fails on exactly the largest states — the rows any check value
+would be computed from.
+
+**`year_key` must be typed.** It was left as text on first build. `dim_year`
+carries a whole number, the relationship was created without complaint, and the
+orphan assertion reported all three distinct years as orphans because
+`List.Difference` compares text to number and never matches. The relationship
+was inert. The survey path does not have this problem because
+`fact_chile_state` types `year_key` downstream of staging; the duplicate never
+inherited that step. **`state_key` stays text** — it matches `dim_state` as
+text, and converting it would strip the leading zeros.
+
+**Assertions** (`chk_row_counts`, five of the seven added at this version):
+
+| Check | Expected |
+|---|---|
+| `fact_chile_census` | 150 |
+| census acres present | 136 |
+| census suppression (D) | 13 |
+| census suppression (Z) | 1 |
+| census fact key uniqueness | 0 |
+| orphan `year_key` (chile census) | 0 |
+| orphan `state_key` (chile census) | 0 |
+
+The `(D)` rows are nine in 2012 and four in 2017. **2022 is complete** — all
+fifty states numeric. This asymmetry is useful rather than annoying: the 2012
+total is understated by nine withheld states, so a 2012→2022 decline computed
+off published values is a *floor*, not a point estimate. Sum of published acres
+is 31,265 (2012), 23,423 (2017), 23,122 (2022) — at least a 26% fall, with the
+bias running in the safe direction for the claim.
+
+**Not a continuation of the survey series.** The Census enumerates all farms;
+the survey samples commercial operations in selected states. Arizona reads 1,100
+harvested acres in the 2018 survey and 386 in the 2022 Census. Those are not two
+points on one line and must never be charted as one.
+
+### 9.12 Coverage is a decision, and it is documented
+
+The single most useful finding in the chile work, and the one the article turns
+on. It is recorded here because it constrains what the model may claim, not just
+what the article says.
+
+Arizona and Texas stop appearing in the chile survey after 2018. Texas and Ohio
+appear in 2024–2025 as `(D)`. Neither is a data quality problem, and neither is
+a statement about the crop.
+
+- **NASS Program Review, Vegetable Program, March 2019.** Effective with the
+  2019 crop, chile's estimating states become California and New Mexico;
+  Arizona and Texas are removed. The stated method: for each crop, states are
+  arrayed by production and value of production, largest first, and the states
+  accounting for the largest proportion are retained, given limited resources.
+- **Not specific to chile.** The same review removed eight states from tomatoes
+  and eight from sweet corn, left lima beans with no estimating states at all,
+  and discontinued every in-season vegetable forecast.
+- **NASS Program Review, Vegetable Program, April 2024.** Chile's estimating
+  states become California, New Mexico, Ohio and Texas, with none removed.
+  Texas is restored and Ohio added. Arizona is not restored.
+- **The primary input to that ranking is the Census of Agriculture** — which is
+  what makes `fact_chile_census` more than a supplementary series. It is the
+  table the coverage decision is made from.
+
+Census harvested acres, from `fact_chile_census`:
+
+| State | 2012 | 2017 | 2022 |
+|---|---|---|---|
+| New Mexico | 9,577 | 8,313 | 8,484 |
+| California | 7,029 | 4,168 | 3,257 |
+| Texas | 4,288 | 2,074 | 2,249 |
+| Florida | 1,188 | 590 | 1,371 |
+| Ohio | 698 | 873 | 1,058 |
+| Arizona | 1,944 | 1,250 | 386 |
+
+Texas ranked third in 2022 and returned. Ohio ranked fifth and was added.
+Arizona had fallen to eleventh, down 80% in a decade, and stayed out. The
+ranking above is harvested acres; the review weighs production and value, so
+this is a proxy for their ordering, not their ordering — see §10.9.
+
+**What this forbids.** A New Mexico share-of-U.S. measure built on
+`fact_chile_state` is not defensible at any grain. The denominator is whichever
+states NASS estimated that year — four through 2018, two from 2019, plus a
+residual present in four of eighteen years and reading zero in two of them. New
+Mexico's share climbs from roughly 55% to near 100% across the series, and most
+of that climb is Arizona and Texas leaving the program. It would be the most
+quotable number in the report and the least true. Not built, by decision.
+
+**What it permits.** New Mexico in absolute acres and production from the
+survey, the fifty-state picture from the Census, and the national supply series
+from ERS (§9.9) — three sources, each used where it is whole, with the reader
+doing the comparison.
 
 ---
 
@@ -1034,7 +1198,8 @@ as an expected value for a filtered query.
 
 ---
 
-**10.6 — Iron County 2025 pastureland is a low-confidence outlier. Open.**
+**10.6 — Iron County 2025 pastureland is a low-confidence outlier. Resolved
+2026-09-17 (D18); the interview question remains open.**
 The county's published series is 27.0, 20.0, 18.5, 16.0, 13.5, 16.5, **43.5**,
 22.0 for 2019-2026: six years of decline, a 164% single-year jump, then most of
 it given back. The CV moves with it — 7.0 in 2024, **28.7** in 2025, 8.3 in
@@ -1046,8 +1211,7 @@ county, not the state.
 The $43.50 figure was published to social media on 2026-09-14 as the headline
 number, with its +9.4% against the state median and its rank of 40 of 106.
 Those three figures are all arithmetically correct and all rest on the least
-reliable observation in the series. **Withdrawn from the article pending
-resolution.**
+reliable observation in the series.
 
 What this generalizes to, and the reason it is an open item rather than a
 correction: nothing in the model stops a low-confidence estimate from being
@@ -1055,8 +1219,21 @@ used as a headline. `Low Confidence Share` and `Median CV` exist but describe
 populations, and `Rent vs State Median` and `County Rank in State` are guarded
 on blanks and land category but not on confidence. A single-county figure
 quoted in the article must carry its CV, and a figure in the `LOW` band must
-not carry a claim on its own. Whether that becomes a measure-level guard, a
-report-layer conditional format, or a review rule is undecided.
+not carry a claim on its own.
+
+**Resolved as a review rule, not a measure (D18).** A measure-level guard that
+blanked `LOW`-band values was considered and rejected. It would suppress exactly
+the observation the reporting exists to investigate, and it would reintroduce
+blanks into arithmetic — the failure mode already hit twice, in §8.5 and §8.6.
+Transparency is also the better answer to the source: the figure was published
+where the interview subject could see it, and the article that follows owes him
+an explanation of the variance rather than its disappearance.
+
+So: the $43.50 is not withdrawn. It is published with its CV beside it, and the
+rank and vs-median figures are used as elicitation on the §5 one-pager rather
+than as standalone claims in the article. Enforcement is a `Confidence Band`
+display measure driving report-layer conditional formatting, plus the review
+rule above. Neither blanks a value.
 
 The three candidate explanations — a changed respondent panel within the
 county, a genuine local rent event, or a model-based estimate pulled by a
@@ -1085,10 +1262,53 @@ setting, not a cost of production. Revisit at the ERS ingest (§9), which may
 support a state-level chile-acreage-weighted framing that this county-level
 pairing cannot.
 
+**10.8 — Chile measures and the intermittency problem. Open.**
+No DAX measures exist on either chile fact. Before any chile visual is built,
+the measures need an answer to a problem the cash rents star does not have:
+a gap in a state series has three causes and they render identically. A state
+may be *out of program* and have no row at all (Arizona 2019–2025, Texas
+2019–2023); *estimated but withheld*, with a row and a `(D)` (California 2025,
+Texas and Ohio 2024–2025); or carry a *published zero* (the residual in 2016 and
+2020, §9.7). Only the second is a gap in the data. A line chart renders all three
+as a fall to zero.
+
+The measure-level half is a rule: never let an absent row become 0. Blank is the
+correct return and Power BI gaps it correctly on a categorical axis, so the risk
+is `DIVIDE` defaults, `COALESCE`, and any `+ 0`. The report-level half is that
+Arizona and Texas lines must **end** in 2018 rather than continue — a series
+that stops is honest, a series that falls to zero is not. A `Chile Coverage
+Status` measure returning Published / Withheld / Not estimated serves tooltips
+and annotation, not filtering.
+
+Yield and price should be derived rather than aggregated: production cwt ÷
+acres harvested, and production $ ÷ production cwt. Tested against all 59
+state-years with the inputs published, median error 0.07% and worst case 1.2%.
+That reproduces the published rate at single-state grain and stays correct when
+several states are in context, which averaging the published rates does not.
+
+**10.9 — Why Florida was not added in 2024. Open, and possibly unanswerable.**
+Florida ranked fourth in the 2022 Census at 1,371 harvested acres, above Ohio's
+1,058, and was not added to the chile estimating program by the April 2024
+review (§9.12). The review weighs production and value of production, not
+harvested acres, so the discrepancy may simply be that Florida's chile is lower
+value, or that its pepper acreage is captured under Peppers, Bell. **Do not
+assert a reason in the article.** Either find the value-based ranking the review
+used, or state the ranking as acres and leave the Florida case unexplained.
+
+**10.10 — New Mexico Chile Survey consolidation. Open, unsourced.**
+A 2022 OMB supporting statement reportedly records the standalone New Mexico
+Chile Survey being folded into the End of Season Vegetable Survey. Only a
+secondary mirror has been located. This is a change to the instrument itself and
+would be a strong detail for the article, but it does not go in until the
+Federal Register or reginfo.gov entry is found.
+
+---
+
 ## 11. Changelog
 
 | Version | Date | Change |
 |---|---|---|
+| 0.5.0 | 2026-09-17 | **Third fact built.** `fact_chile_census` (150 rows, 50 states × 2012/2017/2022) from the Census of Agriculture rows already present in the acres-harvested extract, joined to `dim_state` and `dim_year`; twelve relationships in the file. D16, D17, D18 taken. **`dim_state` widened 49 → 50** — its grain was the cash rents survey's state list, and Alaska has a Census chile row but no rent rows; the dimension now means the union of states in any fact (D17). §6.4 also drops the `is_chile_producing` row, deleted under D13 in 0.4.0 but left standing in the table. **§10.6 resolved (D18):** low-confidence figures publish with their CV attached rather than being suppressed — a measure-level guard would hide the observation the reporting exists to investigate and would put blanks back into arithmetic (§8.5, §8.6); the Iron County $43.50 is no longer withdrawn. **§9.12 added** — coverage is a documented decision: the March 2019 program review removed Arizona and Texas from the chile estimating program by ranking states on production and value, the April 2024 review restored Texas and added Ohio, and the Census of Agriculture is the ranking's primary input. This forbids a New Mexico share-of-U.S. measure, whose denominator moves with the program rather than the crop. Two failures recorded: `year_key` left as text made a relationship inert while the orphan check read all three years as orphans, and `(Z)` — recorded in 0.4.0 but never exercised — occurs once in the Census rows and would have been dropped as missing. `chk_row_counts` extended to 35 assertions. §9.3 records that the `Program` filter now selects between two facts rather than only guarding one. Open items 10.8 (chile measures and the three causes of a gap), 10.9 (Florida's absence from the 2024 review), 10.10 (NM Chile Survey consolidation, unsourced) added. |
 | 0.4.0 | 2026-09-16 | **Second star built.** `fact_chile_state` (62 rows) and `fact_chile_state_residual` (4 rows) ingested from five NASS Quick Stats extracts, joined to the conformed `dim_state` and `dim_year` with no key repair needed. **§9 rewritten from forward design to as-built** — the 2026-08-29 design was structurally wrong, planning one state-level fact sourced from the ERS yearbook, which has no state dimension; state chile comes from Quick Stats and the ERS national series becomes a separate unbuilt fact (§9.9). D11 (wide shape, six measure columns plus `suppression_code`), D12 (`OTHER STATES` to its own table), D13 (`is_chile_producing` deleted rather than built) and D15 (utilization family deferred) ratified. Three findings recorded: suppression is whole-row and coincident across all six metrics, which is what makes the wide shape clean (§9.4); `(D)` strings carry a leading space, a hazard distinct from §3.8's commas because it fails as a silent non-match rather than a misparse (§9.4); the residual's 2016 and 2020 rows are published zeros, so its price and yield are not rates and it must be excluded from any average (§9.7). `chk_row_counts` extended to 28 assertions. `chile-ingest-profile.md` folded in and retired. |
 | 0.3.4 | 2026-09-16 | **D14 ratified and executed** — `dim_year.survey_status` renamed to `cash_rents_survey_status`, so the conformed dimension no longer asserts a Cash Rents suspension over chile years that published normally. The rename surfaced three dependents, none of which the model reported on open: the `AddedResidualGrain` conditional column lost its first clause and returned errors on all 19 rows; that column's `type text` ascription was invalid against the nulls it returns by design and is now `type nullable text`; and `Rent YoY Pct (Matched Counties)` and `Rent YoY Pct (Unmatched)` both referenced the old column name and were broken in a file that opened without complaint. §6.5 records the conformed-dimension naming rule and the ascription. §8.5 updated to the new name. `chk_row_counts` extended to 19 assertions — suspension row count and `residual_grain` null count, both expecting 2 — because no existing assertion caught any of the three breaks. |
 | 0.3.3 | 2026-09-14 | §10.6 added — Iron County 2025 pastureland ($43.50, CV 28.7) is a `LOW`-confidence outlier in a declining series; the figure and its derived rank and vs-median claims are withdrawn from the article, and the general gap is that no measure stops a low-confidence estimate becoming a headline. §10.7 added — Doña Ana irrigated rent is not a chile-ground proxy, and the county's chile acreage is `(D)` in 2024-2025 so the pairing is unavailable. §2.1 added — reader-facing explanation of why a 2026 rate exists before 2026 ends, required in every version of the article. §7.3 added — worked nominal-versus-real figures for Iron County and the endpoint-sensitivity rule that the existing real-dollar rule does not cover. §8.2 baseline extended with the Iron County series and `Counties Reporting in State` for MO pastureland 2026 (104). Header now records the repo URL rather than a suggested path. |
