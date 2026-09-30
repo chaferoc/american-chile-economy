@@ -1,12 +1,12 @@
 # USDA NASS County Cash Rents — Data Model Specification
 
-**Version:** 0.5.0
+**Version:** 0.5.1
 **Status:** Three facts built and validated — county cash rents, state chile, and
 chile Census of Agriculture. Thirteen measures written and validated, all on the
-cash rents star; no chile measures yet. Two report pages built for the 2026-09-19
-producer interview; report layer proper not started. `chk_row_counts` at 35
-assertions, all passing. §10.6 resolved.
-**Last updated:** 2026-09-17
+cash rents star; no chile measures yet. Report layer started: the published
+Iron County page is in progress (§11). `chk_row_counts` at 35 assertions, all
+passing. §10.6 resolved.
+**Last updated:** 2026-09-30
 **Owner:** Aaron / Heat & Harvest Data Desk
 **Repo:** `github.com/chaferoc/american-chile-economy`, at
 `docs/data-model/cash-rents-data-model.md`
@@ -190,7 +190,7 @@ residual row.
 ## 4. Decision log
 
 D1–D10 taken 2026-08-29; D11–D15 during the builds they govern. Change requires
-a version bump and an entry in §11.
+a version bump and an entry in §12.
 
 | ID | Decision | Resolution |
 |---|---|---|
@@ -416,7 +416,7 @@ visual, and combined with the **Show items with no data** requirement below it
 would open a gap in a series that has no gap. The general rule: a conformed
 dimension carries attributes true of the calendar, and where an attribute
 belongs to one source, its name must say so. Renamed under D14; the rename
-broke three dependents, none of which the model reported at open — see the §11
+broke three dependents, none of which the model reported at open — see the §12
 entry for 0.3.4.
 
 **The 19-row design is necessary but not sufficient.** It makes the suspension
@@ -1304,10 +1304,74 @@ Federal Register or reginfo.gov entry is found.
 
 ---
 
-## 11. Changelog
+## 11. Report layer
+
+**Working rule.** Each session starts from this spec and the most recent session
+before giving a first step. Verified work is not re-verified: an item reopens only
+on a named defect, stated with the evidence for it.
+
+This section exists because report-layer work between 2026-09-17 and 2026-09-30
+was recorded only in chat history, and a later session restarted it from step 1.
+
+### 11.1 Pages in the file
+
+| Page | Purpose | Status |
+|---|---|---|
+| Page 1 | Scratch validation: national measures by year and land category | Working page. Not published. |
+| Iron County Pastureland | 2026-09-19 interview page: line chart, four cards, year slicer, table | Interview artifact. Not published. |
+| Iron County One-Pager | Letter-landscape (1056×816) printed sheet: title, table, CV footnote | Interview artifact. Not published. |
+| Iron County | Published page 1 | In progress (§11.3) |
+
+All three Iron County pages carry hidden page-level filters for Missouri, Iron and
+Pastureland, set on attribute columns because the surrogate keys are hidden from
+report view.
+
+The repo `.pbix` (last commit 2026-09-27 20:55) predates the Iron County page.
+Commit after the §11.3 items are done.
+
+### 11.2 Iron County page — decisions
+
+- **Built from Iron County Pastureland**, not the One-Pager, for the 1920×1080
+  canvas. Duplicated, then trimmed.
+- **Four cards and the year slicer removed.** They showed vs-median and CV one
+  year at a time without the series, and the default year showed −44.7% as a
+  standalone claim, which D18 rules out.
+- **Line chart, the 2008/2015/2018 text box, and the table kept.** The table puts
+  CV beside every rank and vs-median figure, which satisfies D18. The text box
+  already annotates the 2008 coverage gap separately from the 2015 and 2018
+  suspensions, as §3.3 requires.
+- **Table width is not a defect.** It spans x 917–1768 on a 1920 canvas. At 100%
+  zoom Desktop's viewport clips it; the canvas does not.
+- **Line interpolation.** The chart renders smoothed because smoothing is the
+  default in the Fluent2 base theme, not because a build step set it. It was
+  not caught at the 2026-09-13 build and was flagged 2026-09-27 from the PBIR
+  JSON. The peak plots exactly at $43.50; the change is a presentation choice
+  for an annual series with one value per year, not a data correction.
+
+### 11.3 Iron County page — open
+
+1. Line interpolation Smooth → Linear (Format visual → Visual → Lines → Shapes).
+2. Bring over the One-Pager's CV footnote.
+3. Build `Confidence Band` in `_Measures` (D18). It does not exist yet; the
+   thirteen in §8.2 are twelve visible plus the hidden `Land Category In Context`.
+4. Conditional formatting on the table driven by `Confidence Band`, so the 2025
+   row (CV 28.7) reads as low confidence.
+
+### 11.4 Pages not started
+
+- **Your county** — reader lookup on the existing measures.
+- **Chile coverage** — Census harvested acres by state from `fact_chile_census`.
+  Blocked on §10.8 only if it draws on `fact_chile_state`.
+- **Publish to web** from My workspace (aaron@heatandharvest.com), then embed in
+  the WordPress post.
+
+---
+
+## 12. Changelog
 
 | Version | Date | Change |
 |---|---|---|
+| 0.5.1 | 2026-09-30 | **§11 Report layer added; changelog renumbered to §12.** Records the four pages in the file, the Iron County page decisions (built from Iron County Pastureland; cards and year slicer removed under D18; table and §3.3 annotation kept; smoothed line traced to the Fluent2 theme default, not a build step), and its open items (linear interpolation, CV footnote, `Confidence Band`, conditional formatting). Adds the working rule that sessions start from the spec and the most recent session, and that verified work reopens only on a named defect. Notes that the repo `.pbix` predates the Iron County page. No model changes. |
 | 0.5.0 | 2026-09-17 | **Third fact built.** `fact_chile_census` (150 rows, 50 states × 2012/2017/2022) from the Census of Agriculture rows already present in the acres-harvested extract, joined to `dim_state` and `dim_year`; twelve relationships in the file. D16, D17, D18 taken. **`dim_state` widened 49 → 50** — its grain was the cash rents survey's state list, and Alaska has a Census chile row but no rent rows; the dimension now means the union of states in any fact (D17). §6.4 also drops the `is_chile_producing` row, deleted under D13 in 0.4.0 but left standing in the table. **§10.6 resolved (D18):** low-confidence figures publish with their CV attached rather than being suppressed — a measure-level guard would hide the observation the reporting exists to investigate and would put blanks back into arithmetic (§8.5, §8.6); the Iron County $43.50 is no longer withdrawn. **§9.12 added** — coverage is a documented decision: the March 2019 program review removed Arizona and Texas from the chile estimating program by ranking states on production and value, the April 2024 review restored Texas and added Ohio, and the Census of Agriculture is the ranking's primary input. This forbids a New Mexico share-of-U.S. measure, whose denominator moves with the program rather than the crop. Two failures recorded: `year_key` left as text made a relationship inert while the orphan check read all three years as orphans, and `(Z)` — recorded in 0.4.0 but never exercised — occurs once in the Census rows and would have been dropped as missing. `chk_row_counts` extended to 35 assertions. §9.3 records that the `Program` filter now selects between two facts rather than only guarding one. Open items 10.8 (chile measures and the three causes of a gap), 10.9 (Florida's absence from the 2024 review), 10.10 (NM Chile Survey consolidation, unsourced) added. |
 | 0.4.0 | 2026-09-16 | **Second star built.** `fact_chile_state` (62 rows) and `fact_chile_state_residual` (4 rows) ingested from five NASS Quick Stats extracts, joined to the conformed `dim_state` and `dim_year` with no key repair needed. **§9 rewritten from forward design to as-built** — the 2026-08-29 design was structurally wrong, planning one state-level fact sourced from the ERS yearbook, which has no state dimension; state chile comes from Quick Stats and the ERS national series becomes a separate unbuilt fact (§9.9). D11 (wide shape, six measure columns plus `suppression_code`), D12 (`OTHER STATES` to its own table), D13 (`is_chile_producing` deleted rather than built) and D15 (utilization family deferred) ratified. Three findings recorded: suppression is whole-row and coincident across all six metrics, which is what makes the wide shape clean (§9.4); `(D)` strings carry a leading space, a hazard distinct from §3.8's commas because it fails as a silent non-match rather than a misparse (§9.4); the residual's 2016 and 2020 rows are published zeros, so its price and yield are not rates and it must be excluded from any average (§9.7). `chk_row_counts` extended to 28 assertions. `chile-ingest-profile.md` folded in and retired. |
 | 0.3.4 | 2026-09-16 | **D14 ratified and executed** — `dim_year.survey_status` renamed to `cash_rents_survey_status`, so the conformed dimension no longer asserts a Cash Rents suspension over chile years that published normally. The rename surfaced three dependents, none of which the model reported on open: the `AddedResidualGrain` conditional column lost its first clause and returned errors on all 19 rows; that column's `type text` ascription was invalid against the nulls it returns by design and is now `type nullable text`; and `Rent YoY Pct (Matched Counties)` and `Rent YoY Pct (Unmatched)` both referenced the old column name and were broken in a file that opened without complaint. §6.5 records the conformed-dimension naming rule and the ascription. §8.5 updated to the new name. `chk_row_counts` extended to 19 assertions — suspension row count and `residual_grain` null count, both expecting 2 — because no existing assertion caught any of the three breaks. |
