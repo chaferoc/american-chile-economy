@@ -1,10 +1,10 @@
 # USDA NASS County Cash Rents — Data Model Specification
 
-**Version:** 0.5.1
+**Version:** 0.5.2
 **Status:** Three facts built and validated — county cash rents, state chile, and
-chile Census of Agriculture. Thirteen measures written and validated, all on the
-cash rents star; no chile measures yet. Report layer started: the published
-Iron County page is in progress (§11). `chk_row_counts` at 35 assertions, all
+chile Census of Agriculture. Fifteen measures written and validated, all on the
+cash rents star; no chile measures yet. Report layer: the published Iron County
+page is built (§11); two pages remain. `chk_row_counts` at 35 assertions, all
 passing. §10.6 resolved.
 **Last updated:** 2026-09-30
 **Owner:** Aaron / Heat & Harvest Data Desk
@@ -588,11 +588,13 @@ more than one table anyway.
 | `State Median CV` | Median CV across the counties publishing in the same state, year and category. Peer context for a single county's CV, which on its own is an uninterpretable percentage. Guarded on land category; blanks before 2021. |
 | `State Median Rent per Acre` | The peer median itself, in dollars — the denominator inside `Rent vs State Median`, surfaced so a table can show it. Iterates the fact, not the dimension (§8.6). |
 | `County Rank in State` | County's rank among counties publishing in its state, year and category. `RANKX`, `DESC`, ties `Skip`. Guarded on land category and on a blank county rate. See §8.6. |
+| `Confidence Band` | D4 band for a single estimate: `High` <10, `Moderate` 10–20, `Low` >20 (`cv_pct`). Returns a value only when exactly one fact row is in context, so it never labels an average; blank before 2021. Display measure for D18. Added 2026-09-30. |
+| `Confidence Band Color` | `#F6D7A7` when `Confidence Band` is `Low`, blank otherwise. Drives field-value background formatting; blank applies none. Added 2026-09-30. |
 | `Counties Reporting in State` | Denominator for the rank. Guarded on land category, unlike `Counties Reporting`, because a rank exists only within a category. Deliberately *not* guarded on a blank county rate: in 2008 Iron County has no estimate and 76 Missouri counties do, and 76 is the honest answer. |
 
-All thirteen measures validated against values computed independently from the
+All fifteen measures validated against values computed independently from the
 extract — the first nine on 2026-09-12, the four peer-context measures on
-2026-09-13. Regression baseline, county fact only:
+2026-09-13, the two confidence-band measures on 2026-09-30. Regression baseline, county fact only:
 
 | Measure | Scope | Value |
 |---|---|---|
@@ -1326,8 +1328,8 @@ All three Iron County pages carry hidden page-level filters for Missouri, Iron a
 Pastureland, set on attribute columns because the surrogate keys are hidden from
 report view.
 
-The repo `.pbix` (last commit 2026-09-27 20:55) predates the Iron County page.
-Commit after the §11.3 items are done.
+The repo `.pbix` must be committed with this version; the 2026-09-27 commit
+predates the Iron County page.
 
 ### 11.2 Iron County page — decisions
 
@@ -1348,14 +1350,20 @@ Commit after the §11.3 items are done.
   JSON. The peak plots exactly at $43.50; the change is a presentation choice
   for an annual series with one value per year, not a data correction.
 
-### 11.3 Iron County page — open
+### 11.3 Iron County page — completed 2026-09-30
 
-1. Line interpolation Smooth → Linear (Format visual → Visual → Lines → Shapes).
-2. Bring over the One-Pager's CV footnote.
-3. Build `Confidence Band` in `_Measures` (D18). It does not exist yet; the
-   thirteen in §8.2 are twelve visible plus the hidden `Land Category In Context`.
-4. Conditional formatting on the table driven by `Confidence Band`, so the 2025
-   row (CV 28.7) reads as low confidence.
+1. Line interpolation set to Linear (Format visual → Visual → Lines → Line).
+2. One-Pager CV footnote copied under the table, same X and width.
+3. `Confidence Band` built and added to the table after Iron CV %. Validated
+   against the Iron County series: 2021 High, 2022 Moderate, 2023 Moderate,
+   2024 High, 2025 Low, 2026 High; blank 2008–2020.
+4. `Confidence Band Color` drives background formatting on the Iron CV % and
+   Confidence Band columns; only 2025 (CV 28.7) is shaded.
+
+Layout as finished: table width 990 so eight columns fit without an internal
+scrollbar; column header text reduced to 13.6 pt with text wrap on; table sorted
+by Year ascending (a header click had re-sorted it by MO counties); footnote
+width 990.
 
 ### 11.4 Pages not started
 
@@ -1371,6 +1379,7 @@ Commit after the §11.3 items are done.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.5.2 | 2026-09-30 | **Iron County page built; §11.3 closed.** Linear interpolation, CV footnote, and conditional formatting done. Two measures added to §8.2: `Confidence Band` (D4 thresholds, single-row guard, blank before 2021) and `Confidence Band Color` (field-value background, `Low` only). Validated against the Iron County series. Measure count 13 → 15. Table widened to 990 with header text wrap after the new column forced an internal scrollbar. |
 | 0.5.1 | 2026-09-30 | **§11 Report layer added; changelog renumbered to §12.** Records the four pages in the file, the Iron County page decisions (built from Iron County Pastureland; cards and year slicer removed under D18; table and §3.3 annotation kept; smoothed line traced to the Fluent2 theme default, not a build step), and its open items (linear interpolation, CV footnote, `Confidence Band`, conditional formatting). Adds the working rule that sessions start from the spec and the most recent session, and that verified work reopens only on a named defect. Notes that the repo `.pbix` predates the Iron County page. No model changes. |
 | 0.5.0 | 2026-09-17 | **Third fact built.** `fact_chile_census` (150 rows, 50 states × 2012/2017/2022) from the Census of Agriculture rows already present in the acres-harvested extract, joined to `dim_state` and `dim_year`; twelve relationships in the file. D16, D17, D18 taken. **`dim_state` widened 49 → 50** — its grain was the cash rents survey's state list, and Alaska has a Census chile row but no rent rows; the dimension now means the union of states in any fact (D17). §6.4 also drops the `is_chile_producing` row, deleted under D13 in 0.4.0 but left standing in the table. **§10.6 resolved (D18):** low-confidence figures publish with their CV attached rather than being suppressed — a measure-level guard would hide the observation the reporting exists to investigate and would put blanks back into arithmetic (§8.5, §8.6); the Iron County $43.50 is no longer withdrawn. **§9.12 added** — coverage is a documented decision: the March 2019 program review removed Arizona and Texas from the chile estimating program by ranking states on production and value, the April 2024 review restored Texas and added Ohio, and the Census of Agriculture is the ranking's primary input. This forbids a New Mexico share-of-U.S. measure, whose denominator moves with the program rather than the crop. Two failures recorded: `year_key` left as text made a relationship inert while the orphan check read all three years as orphans, and `(Z)` — recorded in 0.4.0 but never exercised — occurs once in the Census rows and would have been dropped as missing. `chk_row_counts` extended to 35 assertions. §9.3 records that the `Program` filter now selects between two facts rather than only guarding one. Open items 10.8 (chile measures and the three causes of a gap), 10.9 (Florida's absence from the 2024 review), 10.10 (NM Chile Survey consolidation, unsourced) added. |
 | 0.4.0 | 2026-09-16 | **Second star built.** `fact_chile_state` (62 rows) and `fact_chile_state_residual` (4 rows) ingested from five NASS Quick Stats extracts, joined to the conformed `dim_state` and `dim_year` with no key repair needed. **§9 rewritten from forward design to as-built** — the 2026-08-29 design was structurally wrong, planning one state-level fact sourced from the ERS yearbook, which has no state dimension; state chile comes from Quick Stats and the ERS national series becomes a separate unbuilt fact (§9.9). D11 (wide shape, six measure columns plus `suppression_code`), D12 (`OTHER STATES` to its own table), D13 (`is_chile_producing` deleted rather than built) and D15 (utilization family deferred) ratified. Three findings recorded: suppression is whole-row and coincident across all six metrics, which is what makes the wide shape clean (§9.4); `(D)` strings carry a leading space, a hazard distinct from §3.8's commas because it fails as a silent non-match rather than a misparse (§9.4); the residual's 2016 and 2020 rows are published zeros, so its price and yield are not rates and it must be excluded from any average (§9.7). `chk_row_counts` extended to 28 assertions. `chile-ingest-profile.md` folded in and retired. |
