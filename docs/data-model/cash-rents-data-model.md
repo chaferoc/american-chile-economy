@@ -1,12 +1,12 @@
 # USDA NASS County Cash Rents — Data Model Specification
 
-**Version:** 0.5.2
+**Version:** 0.5.3
 **Status:** Three facts built and validated — county cash rents, state chile, and
 chile Census of Agriculture. Fifteen measures written and validated, all on the
 cash rents star; no chile measures yet. Report layer: the published Iron County
-page is built (§11); two pages remain. `chk_row_counts` at 35 assertions, all
+and Your County pages are built (§11); the chile coverage page remains. `chk_row_counts` at 35 assertions, all
 passing. §10.6 resolved.
-**Last updated:** 2026-09-30
+**Last updated:** 2026-10-01
 **Owner:** Aaron / Heat & Harvest Data Desk
 **Repo:** `github.com/chaferoc/american-chile-economy`, at
 `docs/data-model/cash-rents-data-model.md`
@@ -1322,7 +1322,8 @@ was recorded only in chat history, and a later session restarted it from step 1.
 | Page 1 | Scratch validation: national measures by year and land category | Working page. Not published. |
 | Iron County Pastureland | 2026-09-19 interview page: line chart, four cards, year slicer, table | Interview artifact. Not published. |
 | Iron County One-Pager | Letter-landscape (1056×816) printed sheet: title, table, CV footnote | Interview artifact. Not published. |
-| Iron County | Published page 1 | In progress (§11.3) |
+| Iron County | Published page 1 | Built (§11.3) |
+| Your County | Published page 2: reader lookup by state and county | Built (§11.5) |
 
 All three Iron County pages carry hidden page-level filters for Missouri, Iron and
 Pastureland, set on attribute columns because the surrogate keys are hidden from
@@ -1367,11 +1368,38 @@ width 990.
 
 ### 11.4 Pages not started
 
-- **Your county** — reader lookup on the existing measures.
 - **Chile coverage** — Census harvested acres by state from `fact_chile_census`.
   Blocked on §10.8 only if it draws on `fact_chile_state`.
 - **Publish to web** from My workspace (aaron@heatandharvest.com), then embed in
   the WordPress post.
+
+### 11.5 Your County page — built 2026-10-01
+
+- **Duplicated from Iron County.** The page-level Missouri and Iron filters were
+  removed; the Pastureland filter stays.
+- **Two dropdown slicers**, State (`dim_state[state_name]`) and County
+  (`dim_geography[county_name]`), both single-select. The `dim_state →
+  dim_geography` snowflake (§6.7) narrows the County list to the chosen state,
+  which matters because county names repeat across states. Single-select keeps
+  one county selected at all times; readers cannot clear it.
+- **Measure guard added.** With only a state in context, `County Rank in State`
+  and `Rent vs State Median` ranked and compared the state average as if it were
+  a county (Missouri 2026: rank 54, −2.1%). Both now also require
+  `HASONEVALUE ( dim_geography[geo_key] )`. Single-county results are unchanged:
+  Missouri / Iron reproduces the Iron County page row for row (2026: $22.00,
+  −44.7%, rank 95 of 104; 2025 shaded Low). Single-select means readers cannot
+  reach the no-county state; the guard is insurance.
+- **Generic labels.** Columns: County CV %, State median $/acre, Vs state median,
+  Rank in state, Counties in state. Slicer titles: State, County.
+- **Text.** Chart note: no county-level survey nationwide in 2015 or 2018; any
+  other blank year means no published estimate for that county. Footnote adds
+  the Confidence thresholds (High <10% CV, Moderate 10–20%, Low >20%) and ranks
+  "among the state's counties."
+- **Layout** was resized and rearranged by hand to fit all eight columns without
+  an internal scrollbar.
+
+**Open:** add the Confidence threshold sentence to the Iron County page footnote,
+which has the column but no definition.
 
 ---
 
@@ -1379,6 +1407,7 @@ width 990.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.5.3 | 2026-10-01 | **Your County page built (§11.5).** State and County single-select slicers over the `dim_state → dim_geography` snowflake. `County Rank in State` and `Rent vs State Median` gain a `HASONEVALUE ( dim_geography[geo_key] )` guard after a state-only context ranked the state average as a county; single-county results unchanged (Missouri / Iron reproduces the Iron County page). Generic column and slicer labels; footnote defines the Confidence thresholds. Open: same definition on the Iron County footnote. |
 | 0.5.2 | 2026-09-30 | **Iron County page built; §11.3 closed.** Linear interpolation, CV footnote, and conditional formatting done. Two measures added to §8.2: `Confidence Band` (D4 thresholds, single-row guard, blank before 2021) and `Confidence Band Color` (field-value background, `Low` only). Validated against the Iron County series. Measure count 13 → 15. Table widened to 990 with header text wrap after the new column forced an internal scrollbar. |
 | 0.5.1 | 2026-09-30 | **§11 Report layer added; changelog renumbered to §12.** Records the four pages in the file, the Iron County page decisions (built from Iron County Pastureland; cards and year slicer removed under D18; table and §3.3 annotation kept; smoothed line traced to the Fluent2 theme default, not a build step), and its open items (linear interpolation, CV footnote, `Confidence Band`, conditional formatting). Adds the working rule that sessions start from the spec and the most recent session, and that verified work reopens only on a named defect. Notes that the repo `.pbix` predates the Iron County page. No model changes. |
 | 0.5.0 | 2026-09-17 | **Third fact built.** `fact_chile_census` (150 rows, 50 states × 2012/2017/2022) from the Census of Agriculture rows already present in the acres-harvested extract, joined to `dim_state` and `dim_year`; twelve relationships in the file. D16, D17, D18 taken. **`dim_state` widened 49 → 50** — its grain was the cash rents survey's state list, and Alaska has a Census chile row but no rent rows; the dimension now means the union of states in any fact (D17). §6.4 also drops the `is_chile_producing` row, deleted under D13 in 0.4.0 but left standing in the table. **§10.6 resolved (D18):** low-confidence figures publish with their CV attached rather than being suppressed — a measure-level guard would hide the observation the reporting exists to investigate and would put blanks back into arithmetic (§8.5, §8.6); the Iron County $43.50 is no longer withdrawn. **§9.12 added** — coverage is a documented decision: the March 2019 program review removed Arizona and Texas from the chile estimating program by ranking states on production and value, the April 2024 review restored Texas and added Ohio, and the Census of Agriculture is the ranking's primary input. This forbids a New Mexico share-of-U.S. measure, whose denominator moves with the program rather than the crop. Two failures recorded: `year_key` left as text made a relationship inert while the orphan check read all three years as orphans, and `(Z)` — recorded in 0.4.0 but never exercised — occurs once in the Census rows and would have been dropped as missing. `chk_row_counts` extended to 35 assertions. §9.3 records that the `Program` filter now selects between two facts rather than only guarding one. Open items 10.8 (chile measures and the three causes of a gap), 10.9 (Florida's absence from the 2024 review), 10.10 (NM Chile Survey consolidation, unsourced) added. |
