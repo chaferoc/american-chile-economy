@@ -1,0 +1,70 @@
+table dim_land_category
+	lineageTag: 6dbdd1f9-1ec2-45fb-8d58-8540bc98215a
+
+	column land_category_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 745f6b6c-c538-4e62-8ff7-afdb109e45b1
+		summarizeBy: none
+		sourceColumn: land_category_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column land_category_code
+		dataType: string
+		isHidden
+		lineageTag: f80e856d-796b-448d-a7b0-9610e85ee89a
+		summarizeBy: none
+		sourceColumn: land_category_code
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column land_category_label
+		dataType: string
+		lineageTag: 8def28c0-ec21-49d6-80fe-4b1ec9dd1045
+		summarizeBy: none
+		sourceColumn: land_category_label
+		sortByColumn: land_category_key
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_cropland
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 23add3cd-09d5-46a9-a22e-15487aa00606
+		summarizeBy: none
+		sourceColumn: is_cropland
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_land_category = m
+		mode: import
+		source =
+				let
+				    Source = #table(
+				        type table [
+				            land_category_key = Int64.Type,
+				            land_category_code = text,
+				            land_category_label = text,
+				            is_cropland = logical
+				        ],
+				        {
+				            {1, "CROPLAND_IRRIGATED",     "Irrigated cropland",     true},
+				            {2, "CROPLAND_NON_IRRIGATED", "Non-irrigated cropland", true},
+				            {3, "PASTURELAND",            "Pastureland",            false}
+				        }
+				    )
+				in
+				    Source
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

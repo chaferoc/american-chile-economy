@@ -1,0 +1,104 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "f046afde0091030a0d85",
+  "position": {
+    "x": 0,
+    "y": 774.71124620060789,
+    "z": 2000,
+    "height": 304.92401215805472,
+    "width": 1860.1823708206687,
+    "tabOrder": 2000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Columns": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_year"
+                    }
+                  },
+                  "Property": "year"
+                }
+              },
+              "queryRef": "dim_year.year",
+              "nativeQueryRef": "year",
+              "active": true
+            }
+          ]
+        },
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_land_category"
+                    }
+                  },
+                  "Property": "land_category_label"
+                }
+              },
+              "queryRef": "dim_land_category.land_category_label",
+              "nativeQueryRef": "land_category_label",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Counties Reporting"
+                }
+              },
+              "queryRef": "_Measures.Counties Reporting",
+              "nativeQueryRef": "Counties Reporting"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Low Confidence Share"
+                }
+              },
+              "queryRef": "_Measures.Low Confidence Share",
+              "nativeQueryRef": "Low Confidence Share"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Median CV"
+                }
+              },
+              "queryRef": "_Measures.Median CV",
+              "nativeQueryRef": "Median CV"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

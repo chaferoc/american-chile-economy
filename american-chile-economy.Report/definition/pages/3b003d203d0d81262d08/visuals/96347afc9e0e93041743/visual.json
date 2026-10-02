@@ -1,0 +1,34 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "96347afc9e0e93041743",
+  "position": {
+    "x": 102.49756097560976,
+    "y": 69.658536585365852,
+    "z": 7001,
+    "height": 39.804878048780488,
+    "width": 850.829268292683,
+    "tabOrder": 7001
+  },
+  "visual": {
+    "visualType": "textbox",
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "paragraphs": [
+              {
+                "textRuns": [
+                  {
+                    "value": "Iron County, Missouri — pastureland cash rent, 2008–2026. Source: USDA NASS Cash Rents Survey, county estimates. Nominal dollars."
+                  }
+                ],
+                "horizontalTextAlignment": "center"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

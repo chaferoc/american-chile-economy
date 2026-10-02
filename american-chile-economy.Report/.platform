@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "american-chile-economy"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "e1f0f460-72a3-4798-bb60-ec7b4f696e05"
+  }
+}

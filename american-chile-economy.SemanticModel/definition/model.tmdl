@@ -1,0 +1,29 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["src_cash_rents","fact_cash_rent","fact_cash_rent_residual","chk_row_counts","dim_geography","dim_state","dim_year","dim_land_category","SourceFolder","SourceFile","_Measures","src_chile_acres_planted","src_chile_acres_harvested","src_chile_yield","src_chile_price","src_chile_production_cwt","src_chile_production_usd","src_chile_state","fact_chile_state","fact_chile_state_residual","fact_chile_census"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table fact_cash_rent
+ref table fact_cash_rent_residual
+ref table chk_row_counts
+ref table dim_geography
+ref table dim_state
+ref table dim_year
+ref table dim_land_category
+ref table _Measures
+ref table fact_chile_state
+ref table fact_chile_state_residual
+ref table fact_chile_census
+
+ref cultureInfo en-US
+

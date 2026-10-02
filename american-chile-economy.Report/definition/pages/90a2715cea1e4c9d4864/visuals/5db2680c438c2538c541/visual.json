@@ -1,0 +1,34 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "5db2680c438c2538c541",
+  "position": {
+    "x": 885,
+    "y": 710,
+    "z": 3000,
+    "height": 99.512195121951223,
+    "width": 1025,
+    "tabOrder": 3000
+  },
+  "visual": {
+    "visualType": "textbox",
+    "objects": {
+      "general": [
+        {
+          "properties": {
+            "paragraphs": [
+              {
+                "textRuns": [
+                  {
+                    "value": "CV = coefficient of variation, a precision measure NASS began publishing in 2021. Higher means less certain. Confidence: High under 10% CV, Moderate 10–20%, Low over 20%. Rank is among the state's counties publishing an estimate for that land category that year; ties share a rank."
+                  }
+                ],
+                "indent": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

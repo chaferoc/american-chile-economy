@@ -1,0 +1,349 @@
+table _Measures
+	lineageTag: 45e70e39-18a7-44e0-96f8-9e3004f1351e
+
+	measure 'Avg County Rent per Acre' =
+			
+			IF (
+			    [Land Category In Context],
+			    AVERAGE ( fact_cash_rent[rent_usd_per_acre] ),
+			    BLANK ()
+			)
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 56ec686b-9bd9-48f3-8d18-973412e83e78
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Avg Real Rent per Acre' =
+			
+			IF (
+			    [Land Category In Context],
+			    AVERAGEX (
+			        fact_cash_rent,
+			        fact_cash_rent[rent_usd_per_acre]
+			            * RELATED ( dim_year[deflator_to_base] )
+			    ),
+			    BLANK ()
+			)
+		lineageTag: 84638ce0-a90c-46c6-a54e-87b036ebde3c
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Land Category In Context' =
+			
+			ISFILTERED ( dim_land_category[land_category_label] )
+			    || HASONEVALUE ( dim_land_category[land_category_label] )
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		isHidden
+		lineageTag: 3759f256-4290-4e96-9dcd-8b9a4b43f33b
+
+		changedProperty = IsHidden
+
+	measure 'Rent YoY Pct (Unmatched)' =
+			
+			VAR ThisYear = SELECTEDVALUE ( dim_year[year_key] )
+			VAR ThisStatus = SELECTEDVALUE ( dim_year[cash_rents_survey_status] )
+			VAR PriorStatus =
+			    CALCULATE (
+			        SELECTEDVALUE ( dim_year[cash_rents_survey_status] ),
+			        REMOVEFILTERS ( dim_year ),
+			        dim_year[year_key] = ThisYear - 1
+			    )
+			VAR PriorValue =
+			    CALCULATE (
+			        [Avg County Rent per Acre],
+			        REMOVEFILTERS ( dim_year ),
+			        dim_year[year_key] = ThisYear - 1
+			    )
+			RETURN
+			    IF (
+			        HASONEVALUE ( dim_year[year_key] )
+			            && ThisStatus = "PUBLISHED"
+			            && PriorStatus = "PUBLISHED",
+			        DIVIDE ( [Avg County Rent per Acre] - PriorValue, PriorValue )
+			    )
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 11d7e1b8-f0b5-4113-87ab-1e6e58d0e48a
+
+	measure 'Rent YoY Pct (Matched Counties)' =
+			
+			VAR ThisYear = SELECTEDVALUE ( dim_year[year_key] )
+			VAR ThisStatus = SELECTEDVALUE ( dim_year[cash_rents_survey_status] )
+			VAR PriorStatus =
+			    CALCULATE (
+			        SELECTEDVALUE ( dim_year[cash_rents_survey_status] ),
+			        REMOVEFILTERS ( dim_year ),
+			        dim_year[year_key] = ThisYear - 1
+			    )
+			VAR ThisYearCounties = VALUES ( fact_cash_rent[geo_key] )
+			VAR PriorYearCounties =
+			    CALCULATETABLE (
+			        VALUES ( fact_cash_rent[geo_key] ),
+			        REMOVEFILTERS ( dim_year ),
+			        dim_year[year_key] = ThisYear - 1
+			    )
+			VAR Panel = INTERSECT ( ThisYearCounties, PriorYearCounties )
+			VAR CurrentValue =
+			    CALCULATE ( [Avg County Rent per Acre], KEEPFILTERS ( Panel ) )
+			VAR PriorValue =
+			    CALCULATE (
+			        [Avg County Rent per Acre],
+			        REMOVEFILTERS ( dim_year ),
+			        dim_year[year_key] = ThisYear - 1,
+			        KEEPFILTERS ( Panel )
+			    )
+			RETURN
+			    IF (
+			        HASONEVALUE ( dim_year[year_key] )
+			            && ThisStatus = "PUBLISHED"
+			            && PriorStatus = "PUBLISHED",
+			        DIVIDE ( CurrentValue - PriorValue, PriorValue )
+			    )
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: c65d9cb2-568e-4d4e-9040-bd894fa4ecfa
+
+	measure 'Counties Reporting' =
+			
+			DISTINCTCOUNT ( fact_cash_rent[geo_key] )
+		formatString: #,0
+		lineageTag: 425e16cb-3b89-48bb-9073-c7ded427d16f
+
+	measure 'Low Confidence Share' =
+			
+			VAR RatedRows =
+			    CALCULATE (
+			        COUNTROWS ( fact_cash_rent ),
+			        KEEPFILTERS ( NOT ISBLANK ( fact_cash_rent[cv_pct] ) )
+			    )
+			VAR LowRows =
+			    CALCULATE (
+			        COUNTROWS ( fact_cash_rent ),
+			        KEEPFILTERS ( fact_cash_rent[cv_pct] > 20 )
+			    )
+			RETURN
+			    DIVIDE ( LowRows, RatedRows )
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: c7a262a5-332a-4b04-a398-7a3702bcb8c8
+
+	measure 'Median CV' =
+			
+			MEDIANX (
+			    FILTER ( fact_cash_rent, NOT ISBLANK ( fact_cash_rent[cv_pct] ) ),
+			    fact_cash_rent[cv_pct]
+			)
+		lineageTag: d26b688d-f5b4-4333-84fd-37d183b962cf
+
+		formatStringDefinition = "0.0""%"""
+
+	measure 'Rent vs State Median' =
+			
+			VAR CountyRent = AVERAGE ( fact_cash_rent[rent_usd_per_acre] )
+			VAR StateMedian =
+			    CALCULATE (
+			        MEDIANX (
+			            VALUES ( fact_cash_rent[geo_key] ),
+			            CALCULATE ( AVERAGE ( fact_cash_rent[rent_usd_per_acre] ) )
+			        ),
+			        REMOVEFILTERS (
+			            dim_geography[geo_key],
+			            dim_geography[county_name],
+			            dim_geography[county_ansi],
+			            dim_geography[ag_district_code],
+			            dim_geography[ag_district_name]
+			        )
+			    )
+			RETURN
+			    IF (
+			        NOT ISBLANK ( CountyRent )
+			            && [Land Category In Context]
+			            && HASONEVALUE ( dim_geography[geo_key] ),
+			        DIVIDE ( CountyRent - StateMedian, StateMedian )
+			    )
+		lineageTag: b811887e-6767-4430-a927-aa03a772dbe2
+
+		formatStringDefinition = "+0.0%;-0.0%;0.0%"
+
+	measure 'State Median CV' =
+			
+			IF (
+			    [Land Category In Context],
+			    CALCULATE (
+			        MEDIANX (
+			            FILTER (
+			                fact_cash_rent,
+			                NOT ISBLANK ( fact_cash_rent[cv_pct] )
+			            ),
+			            fact_cash_rent[cv_pct]
+			        ),
+			        REMOVEFILTERS (
+			            dim_geography[geo_key],
+			            dim_geography[county_ansi],
+			            dim_geography[county_name]
+			        )
+			    )
+			)
+		lineageTag: bde948fd-0ce6-43d2-8531-05ae0973f46d
+
+		formatStringDefinition = "0.0""%"""
+
+	measure 'State Median Rent per Acre' =
+			
+			IF (
+			    [Land Category In Context],
+			    CALCULATE (
+			        MEDIANX (
+			            VALUES ( fact_cash_rent[geo_key] ),
+			            CALCULATE ( SELECTEDVALUE ( fact_cash_rent[rent_usd_per_acre] ) )
+			        ),
+			        REMOVEFILTERS (
+			            dim_geography[geo_key],
+			            dim_geography[county_ansi],
+			            dim_geography[county_name]
+			        )
+			    )
+			)
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 350ef6e5-4e00-4deb-b8b8-2209d10d8332
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'County Rank in State' =
+			
+			IF (
+			    [Land Category In Context]
+			        && HASONEVALUE ( dim_geography[geo_key] ),
+			    VAR CountyRent = [Avg County Rent per Acre]
+			    RETURN
+			        IF (
+			            NOT ISBLANK ( CountyRent ),
+			            CALCULATE (
+			                RANKX (
+			                    VALUES ( fact_cash_rent[geo_key] ),
+			                    CALCULATE ( SELECTEDVALUE ( fact_cash_rent[rent_usd_per_acre] ) ),
+			                    CountyRent,
+			                    DESC,
+			                    Skip
+			                ),
+			                REMOVEFILTERS (
+			                    dim_geography[geo_key],
+			                    dim_geography[county_ansi],
+			                    dim_geography[county_name]
+			                )
+			            )
+			        )
+			)
+		formatString: 0
+		lineageTag: efbd4950-bd40-4a03-9728-7c824f5d8d4a
+
+	measure 'Counties Reporting in State' =
+			
+			IF (
+			    [Land Category In Context],
+			    CALCULATE (
+			        DISTINCTCOUNT ( fact_cash_rent[geo_key] ),
+			        REMOVEFILTERS (
+			            dim_geography[geo_key],
+			            dim_geography[county_ansi],
+			            dim_geography[county_name]
+			        )
+			    )
+			)
+		formatString: 0
+		lineageTag: 7597aebe-7189-4061-8f5d-419b64dd6d7a
+
+	measure 'Confidence Band' =
+			
+			IF (
+			    COUNTROWS ( fact_cash_rent ) = 1,
+			    VAR _cv = SELECTEDVALUE ( fact_cash_rent[cv_pct] )
+			    RETURN
+			        SWITCH (
+			            TRUE (),
+			            ISBLANK ( _cv ), BLANK (),
+			            _cv < 10, "High",
+			            _cv <= 20, "Moderate",
+			            "Low"
+			        )
+			)
+		lineageTag: 910824f0-d78f-43fb-a36e-f56cdf0fa218
+
+	measure 'Confidence Band Color' =
+			
+			IF ( [Confidence Band] = "Low", "#F6D7A7" )
+		lineageTag: 5fea9e2d-2aaa-41f0-a6f9-8f49f3031351
+
+	measure 'Chile Acres Harvested' =
+			
+			SUM ( fact_chile_state[acres_harvested] )
+		formatString: #,0
+		lineageTag: 59d3624a-8a10-4f31-ad23-1760ee121b56
+
+	measure 'Chile Census Acres Harvested' =
+			
+			SUM ( fact_chile_census[acres_harvested] )
+		formatString: #,0
+		lineageTag: ca4d34fd-5f96-4bb9-895b-a2b50d1e05ac
+
+	measure 'Chile Coverage Status' =
+			
+			IF (
+			    HASONEVALUE ( dim_state[state_key] )
+			        && HASONEVALUE ( dim_year[year_key] ),
+			    VAR LatestYear =
+			        CALCULATE ( MAX ( fact_chile_state[year_key] ), REMOVEFILTERS () )
+			    VAR RowCount = COUNTROWS ( fact_chile_state )
+			    VAR Suppression = SELECTEDVALUE ( fact_chile_state[suppression_code] )
+			    RETURN
+			        SWITCH (
+			            TRUE (),
+			            SELECTEDVALUE ( dim_year[year_key] ) > LatestYear, "Not yet published",
+			            RowCount = 0, "Not estimated",
+			            Suppression = "D", "Withheld",
+			            "Published"
+			        )
+			)
+		lineageTag: a22bb203-3ea6-4489-bd91-c9f77bfc2698
+
+	measure 'Chile Coverage Mark' =
+			
+			SWITCH (
+			    [Chile Coverage Status],
+			    "Published", "●",
+			    "Withheld", "W",
+			    "Not estimated", "–"
+			)
+		lineageTag: ec5a36a5-2640-4583-b504-950590fdb4a0
+
+	measure 'Chile Coverage Color' =
+			
+			SWITCH (
+			    [Chile Coverage Status],
+			    "Published", "#CFE3CC",
+			    "Withheld", "#F6D7A7",
+			    "Not estimated", "#E6E6E6"
+			)
+		lineageTag: a1c9d3bb-91f6-4e51-959b-251c0dd75185
+
+	column Column1
+		dataType: string
+		isHidden
+		lineageTag: 20d47ac2-58dc-4fb5-b821-fbd5d0ccf3a6
+		summarizeBy: none
+		sourceColumn: Column1
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measures = m
+		mode: import
+		source =
+				let
+				    Source = "Avg County Rent per Acre =#(cr)#(lf)IF (#(cr)#(lf)    ISFILTERED ( dim_land_category[land_category_label] )#(cr)#(lf)        || HASONEVALUE ( dim_land_category[land_category_label] ),#(cr)#(lf)    AVERAGE ( fact_cash_rent[rent_usd_per_acre] ),#(cr)#(lf)    BLANK ()#(cr)#(lf))",
+				    #"Converted to Table" = #table(1, {{Source}})
+				in
+				    #"Converted to Table"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

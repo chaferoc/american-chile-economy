@@ -1,0 +1,93 @@
+table fact_chile_census
+	lineageTag: 5831435b-3469-40b0-8abb-7778e4a94c7a
+
+	column year_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 67b6e9e4-6f1c-49c8-b4cd-aaf35a71bb7d
+		summarizeBy: none
+		sourceColumn: year_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column state_name
+		dataType: string
+		lineageTag: e4e2ea0b-ffd3-4cfb-91ad-5fbc6fba7570
+		summarizeBy: none
+		sourceColumn: state_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column state_key
+		dataType: string
+		lineageTag: 5ff23322-caee-4998-a24b-893b05c0c203
+		summarizeBy: none
+		sourceColumn: state_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column value_raw
+		dataType: string
+		lineageTag: ade14b9c-4e35-42e0-a727-ddfa77d1ba37
+		summarizeBy: none
+		sourceColumn: value_raw
+
+		annotation SummarizationSetBy = Automatic
+
+	column metric
+		dataType: string
+		lineageTag: 3232b1af-602b-4e7f-9b0f-3b5101e048c5
+		summarizeBy: none
+		sourceColumn: metric
+
+		annotation SummarizationSetBy = Automatic
+
+	column suppression_code
+		dataType: string
+		lineageTag: a3cac085-35b1-43f6-9ff1-66228f841389
+		summarizeBy: none
+		sourceColumn: suppression_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column acres_harvested
+		dataType: int64
+		formatString: 0
+		lineageTag: 624b4696-32cc-48de-b7c3-447213e33de2
+		summarizeBy: sum
+		sourceColumn: acres_harvested
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fact_chile_census = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(
+				        File.Contents(SourceFolder & "\" & "CA70B843-82A4-3C22-BE2A-CF7C9BB6B0CC.csv"),
+				        [Delimiter=",", Columns=21, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    FilterProgram = Table.SelectRows(Promoted, each [Program] = "CENSUS"),
+				    FilterDomain  = Table.SelectRows(FilterProgram, each [Domain] = "TOTAL"),
+				    FilterPeriod  = Table.SelectRows(FilterDomain, each [Period] = "YEAR"),
+				    FilterItem    = Table.SelectRows(FilterPeriod, each [Data Item] = "PEPPERS, CHILE - ACRES HARVESTED"),
+				    RemovedDead = Table.RemoveColumns(FilterItem,
+				        {"Program", "Period", "Week Ending", "Geo Level", "Ag District", "Ag District Code",
+				         "County", "County ANSI", "Zip Code", "Region", "watershed_code", "Watershed",
+				         "Commodity", "Data Item", "Domain", "Domain Category", "CV (%)"}),
+				    AddedMetric = Table.AddColumn(RemovedDead, "metric", each "acres_harvested", type text),
+				    Renamed = Table.RenameColumns(AddedMetric,
+				        {{"Year", "year_key"}, {"State", "state_name"}, {"State ANSI", "state_key"}, {"Value", "value_raw"}}),
+				    #"Added Custom" = Table.AddColumn(Renamed, "suppression_code", each let v = Text.Trim([value_raw]) in
+				if v = "(D)" then "D" else if v = "(Z)" then "Z" else null),
+				    #"Added Custom1" = Table.AddColumn(#"Added Custom", "acres_harvested", each if [suppression_code] = null
+				then Number.FromText(Text.Remove(Text.Trim([value_raw]), {","}))
+				else null),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Added Custom1",{{"acres_harvested", Int64.Type}, {"year_key", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

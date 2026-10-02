@@ -1,0 +1,302 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "9600d4cfa050eaa3e8a5",
+  "position": {
+    "x": 102.49756097560976,
+    "y": 109.46341463414635,
+    "z": 7000,
+    "height": 597.07317073170736,
+    "width": 850.829268292683,
+    "tabOrder": 7000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_year"
+                    }
+                  },
+                  "Property": "year"
+                }
+              },
+              "queryRef": "dim_year.year",
+              "nativeQueryRef": "Year",
+              "displayName": "Year"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Avg County Rent per Acre"
+                }
+              },
+              "queryRef": "_Measures.Avg County Rent per Acre",
+              "nativeQueryRef": "Rent $/acre",
+              "displayName": "Rent $/acre"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Median CV"
+                }
+              },
+              "queryRef": "_Measures.Median CV",
+              "nativeQueryRef": "Iron CV %",
+              "displayName": "Iron CV %"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "State Median Rent per Acre"
+                }
+              },
+              "queryRef": "_Measures.State Median Rent per Acre",
+              "nativeQueryRef": "MO median $/acre",
+              "displayName": "MO median $/acre"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Rent vs State Median"
+                }
+              },
+              "queryRef": "_Measures.Rent vs State Median",
+              "nativeQueryRef": "Vs MO median",
+              "displayName": "Vs MO median"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "County Rank in State"
+                }
+              },
+              "queryRef": "_Measures.County Rank in State",
+              "nativeQueryRef": "Rank in MO",
+              "displayName": "Rank in MO"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Counties Reporting in State"
+                }
+              },
+              "queryRef": "_Measures.Counties Reporting in State",
+              "nativeQueryRef": "MO counties",
+              "displayName": "MO counties"
+            }
+          ],
+          "showAll": true
+        }
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "grid": [
+        {
+          "properties": {
+            "gridVertical": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {
+            "bold": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "wordWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "14D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "stylePreset": [
+        {
+          "properties": {
+            "name": {
+              "expr": {
+                "Literal": {
+                  "Value": "'AlternatingRowsNew'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "9a43cc44ce054914e946",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "dim_year"
+              }
+            },
+            "Property": "year"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "c3da9e7766a1be205cc9",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Avg County Rent per Acre"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "e7f542bf8a40a3ae3e05",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Median CV"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "a0a1b9d2e510cb0578ed",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "State Median Rent per Acre"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "cefc701a3ad7378642b7",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Rent vs State Median"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "8795842383c140070409",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "County Rank in State"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "2b2b3603e5be07e749d4",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Counties Reporting in State"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

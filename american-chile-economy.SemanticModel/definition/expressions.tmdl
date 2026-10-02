@@ -1,0 +1,243 @@
+expression src_cash_rents =
+		let
+		        Source = Csv.Document(
+		        File.Contents(SourceFolder & "\" & SourceFile),
+		        [Delimiter=",", Columns=24, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+		    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+		    RemovedDeadColumns = Table.RemoveColumns(#"Promoted Headers",{"Program", "Period", "Week Ending", "Geo Level", "Zip Code", "Region",
+		        "watershed_code", "Watershed", "Commodity", "Domain", "Domain Category"}),
+		    UnpivotedMeasures = Table.UnpivotOtherColumns(RemovedDeadColumns, {"Year", "State", "State ANSI", "Ag District", "Ag District Code",
+		        "County", "County ANSI"}, "Attribute", "Value"),
+		    #"Renamed Columns" = Table.RenameColumns(UnpivotedMeasures,{{"Attribute", "measure_column"}, {"Value", "value_text"}}),
+		    CleanedMeasureValues = Table.TransformColumns(
+		        #"Renamed Columns",
+		        {{"value_text",
+		          each if _ = "" then null else Number.FromText(Text.Replace(_, ",", "")),
+		          type number}}
+		    ),
+		    RenamedValueColumn = Table.RenameColumns(
+		        CleanedMeasureValues, {{"value_text", "measure_value"}}
+		    ),
+		        MeasureMap = #table(
+		        type table [source_column = text, land_category_code = text, metric = text],
+		        {
+		            {"RENT, CASH, CROPLAND, IRRIGATED - EXPENSE, MEASURED IN $ / ACRE  -  <b>VALUE</b>",      "CROPLAND_IRRIGATED",     "VALUE"},
+		            {"RENT, CASH, CROPLAND, IRRIGATED - EXPENSE, MEASURED IN $ / ACRE  -  <b>CV (%)</b>",     "CROPLAND_IRRIGATED",     "CV"},
+		            {"RENT, CASH, CROPLAND, NON-IRRIGATED - EXPENSE, MEASURED IN $ / ACRE  -  <b>VALUE</b>",  "CROPLAND_NON_IRRIGATED", "VALUE"},
+		            {"RENT, CASH, CROPLAND, NON-IRRIGATED - EXPENSE, MEASURED IN $ / ACRE  -  <b>CV (%)</b>", "CROPLAND_NON_IRRIGATED", "CV"},
+		            {"RENT, CASH, PASTURELAND - EXPENSE, MEASURED IN $ / ACRE  -  <b>VALUE</b>",              "PASTURELAND",            "VALUE"},
+		            {"RENT, CASH, PASTURELAND - EXPENSE, MEASURED IN $ / ACRE  -  <b>CV (%)</b>",             "PASTURELAND",            "CV"}
+		        }
+		    ),
+		    MappedMeasures = Table.Join(
+		        RenamedValueColumn, "measure_column",
+		        MeasureMap, "source_column",
+		        JoinKind.LeftOuter
+		    ),
+		    RemovedSourceColumns = Table.RemoveColumns(MappedMeasures, {"measure_column", "source_column"}),
+		        PivotedMetrics = Table.Pivot(
+		        RemovedSourceColumns,
+		        {"VALUE", "CV"},
+		        "metric",
+		        "measure_value"
+		    ),
+		    RenamedMetrics = Table.RenameColumns(
+		        PivotedMetrics,
+		        {{"VALUE", "rent_usd_per_acre"}, {"CV", "cv_pct"}}
+		    ),
+		        RemovedNullRents = Table.SelectRows(
+		        RenamedMetrics,
+		        each [rent_usd_per_acre] <> null
+		    )
+		in
+		    RemovedNullRents
+	lineageTag: aacf1509-65fc-4ab8-a14c-55483722194b
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression SourceFolder = "D:\webdev\american-chile-economy\data\raw" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 13a8ab23-2934-4882-8350-7a8acb37ce22
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Text
+
+expression SourceFile = "9A9F55D7-E267-38C6-ACB9-DF106291B5A7.csv" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 870ef265-6ac0-44dd-8982-912163e97f67
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Text
+
+expression src_chile_acres_planted =
+		let
+		    Source = Csv.Document(
+		        File.Contents(SourceFolder & "\" & "6B8B4B57-A8C4-30E9-BBF9-F8D1EDEEBF18.csv"),
+		        [Delimiter=",", Columns=21, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+		    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+		    FilterProgram = Table.SelectRows(Promoted, each [Program] = "SURVEY"),
+		    FilterDomain  = Table.SelectRows(FilterProgram, each [Domain] = "TOTAL"),
+		    FilterPeriod  = Table.SelectRows(FilterDomain, each [Period] = "YEAR"),
+		    FilterItem    = Table.SelectRows(FilterPeriod, each [Data Item] = "PEPPERS, CHILE - ACRES PLANTED"),
+		    RemovedDead = Table.RemoveColumns(FilterItem,
+		        {"Program", "Period", "Week Ending", "Geo Level", "Ag District", "Ag District Code",
+		         "County", "County ANSI", "Zip Code", "Region", "watershed_code", "Watershed",
+		         "Commodity", "Data Item", "Domain", "Domain Category", "CV (%)"}),
+		    AddedMetric = Table.AddColumn(RemovedDead, "metric", each "acres_planted", type text),
+		    Renamed = Table.RenameColumns(AddedMetric,
+		        {{"Year", "year_key"}, {"State", "state_name"}, {"State ANSI", "state_key"}, {"Value", "value_raw"}})
+		in
+		    Renamed
+	lineageTag: 1adabc83-19ce-46ab-a256-270cee03db31
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression src_chile_acres_harvested =
+		let
+		    Source = Csv.Document(
+		        File.Contents(SourceFolder & "\" & "CA70B843-82A4-3C22-BE2A-CF7C9BB6B0CC.csv"),
+		        [Delimiter=",", Columns=21, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+		    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+		    FilterProgram = Table.SelectRows(Promoted, each [Program] = "SURVEY"),
+		    FilterDomain  = Table.SelectRows(FilterProgram, each [Domain] = "TOTAL"),
+		    FilterPeriod  = Table.SelectRows(FilterDomain, each [Period] = "YEAR"),
+		    FilterItem    = Table.SelectRows(FilterPeriod, each [Data Item] = "PEPPERS, CHILE - ACRES HARVESTED"),
+		    RemovedDead = Table.RemoveColumns(FilterItem,
+		        {"Program", "Period", "Week Ending", "Geo Level", "Ag District", "Ag District Code",
+		         "County", "County ANSI", "Zip Code", "Region", "watershed_code", "Watershed",
+		         "Commodity", "Data Item", "Domain", "Domain Category", "CV (%)"}),
+		    AddedMetric = Table.AddColumn(RemovedDead, "metric", each "acres_harvested", type text),
+		    Renamed = Table.RenameColumns(AddedMetric,
+		        {{"Year", "year_key"}, {"State", "state_name"}, {"State ANSI", "state_key"}, {"Value", "value_raw"}})
+		in
+		    Renamed
+	lineageTag: 658713d6-3f6c-442b-a9eb-4eaf40cdb20c
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression src_chile_yield =
+		let
+		    Source = Csv.Document(
+		        File.Contents(SourceFolder & "\" & "3CDFA62B-373A-3A19-95CB-881207B34387.csv"),
+		        [Delimiter=",", Columns=21, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+		    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+		    FilterProgram = Table.SelectRows(Promoted, each [Program] = "SURVEY"),
+		    FilterDomain  = Table.SelectRows(FilterProgram, each [Domain] = "TOTAL"),
+		    FilterPeriod  = Table.SelectRows(FilterDomain, each [Period] = "YEAR"),
+		    FilterItem    = Table.SelectRows(FilterPeriod, each [Data Item] = "PEPPERS, CHILE - YIELD, MEASURED IN CWT / ACRE"),
+		    RemovedDead = Table.RemoveColumns(FilterItem,
+		        {"Program", "Period", "Week Ending", "Geo Level", "Ag District", "Ag District Code",
+		         "County", "County ANSI", "Zip Code", "Region", "watershed_code", "Watershed",
+		         "Commodity", "Data Item", "Domain", "Domain Category", "CV (%)"}),
+		    AddedMetric = Table.AddColumn(RemovedDead, "metric", each "yield_cwt_per_acre", type text),
+		    Renamed = Table.RenameColumns(AddedMetric,
+		        {{"Year", "year_key"}, {"State", "state_name"}, {"State ANSI", "state_key"}, {"Value", "value_raw"}})
+		in
+		    Renamed
+	lineageTag: 10b0a36d-14c5-4e7b-b8e0-fe3768662013
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression src_chile_price =
+		let
+		    Source = Csv.Document(
+		        File.Contents(SourceFolder & "\" & "76EDE65A-E714-3F81-AF90-358FED3B79C2.csv"),
+		        [Delimiter=",", Columns=21, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+		    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+		    FilterProgram = Table.SelectRows(Promoted, each [Program] = "SURVEY"),
+		    FilterDomain  = Table.SelectRows(FilterProgram, each [Domain] = "TOTAL"),
+		    FilterPeriod  = Table.SelectRows(FilterDomain, each [Period] = "MARKETING YEAR"),
+		    FilterItem    = Table.SelectRows(FilterPeriod, each [Data Item] = "PEPPERS, CHILE - PRICE RECEIVED, MEASURED IN $ / CWT"),
+		    RemovedDead = Table.RemoveColumns(FilterItem,
+		        {"Program", "Period", "Week Ending", "Geo Level", "Ag District", "Ag District Code",
+		         "County", "County ANSI", "Zip Code", "Region", "watershed_code", "Watershed",
+		         "Commodity", "Data Item", "Domain", "Domain Category", "CV (%)"}),
+		    AddedMetric = Table.AddColumn(RemovedDead, "metric", each "price_usd_per_cwt", type text),
+		    Renamed = Table.RenameColumns(AddedMetric,
+		        {{"Year", "year_key"}, {"State", "state_name"}, {"State ANSI", "state_key"}, {"Value", "value_raw"}})
+		in
+		    Renamed
+	lineageTag: 7618c475-2126-4bc2-b8d3-299c2042ccef
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression src_chile_production_cwt =
+		let
+		    Source = Csv.Document(
+		        File.Contents(SourceFolder & "\" & "0909B7A5-83F4-37C2-8555-C2F43EF0D893.csv"),
+		        [Delimiter=",", Columns=21, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+		    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+		    FilterProgram = Table.SelectRows(Promoted, each [Program] = "SURVEY"),
+		    FilterDomain  = Table.SelectRows(FilterProgram, each [Domain] = "TOTAL"),
+		    FilterPeriod  = Table.SelectRows(FilterDomain, each [Period] = "YEAR"),
+		    FilterItem    = Table.SelectRows(FilterPeriod, each [Data Item] = "PEPPERS, CHILE - PRODUCTION, MEASURED IN CWT"),
+		    RemovedDead = Table.RemoveColumns(FilterItem,
+		        {"Program", "Period", "Week Ending", "Geo Level", "Ag District", "Ag District Code",
+		         "County", "County ANSI", "Zip Code", "Region", "watershed_code", "Watershed",
+		         "Commodity", "Data Item", "Domain", "Domain Category", "CV (%)"}),
+		    AddedMetric = Table.AddColumn(RemovedDead, "metric", each "production_cwt", type text),
+		    Renamed = Table.RenameColumns(AddedMetric,
+		        {{"Year", "year_key"}, {"State", "state_name"}, {"State ANSI", "state_key"}, {"Value", "value_raw"}})
+		in
+		    Renamed
+	lineageTag: 42ea18f1-73b8-4694-9875-740a20c764ce
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression src_chile_production_usd =
+		let
+		    Source = Csv.Document(
+		        File.Contents(SourceFolder & "\" & "0909B7A5-83F4-37C2-8555-C2F43EF0D893.csv"),
+		        [Delimiter=",", Columns=21, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+		    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+		    FilterProgram = Table.SelectRows(Promoted, each [Program] = "SURVEY"),
+		    FilterDomain  = Table.SelectRows(FilterProgram, each [Domain] = "TOTAL"),
+		    FilterPeriod  = Table.SelectRows(FilterDomain, each [Period] = "YEAR"),
+		    FilterItem    = Table.SelectRows(FilterPeriod, each [Data Item] = "PEPPERS, CHILE - PRODUCTION, MEASURED IN $"),
+		    RemovedDead = Table.RemoveColumns(FilterItem,
+		        {"Program", "Period", "Week Ending", "Geo Level", "Ag District", "Ag District Code",
+		         "County", "County ANSI", "Zip Code", "Region", "watershed_code", "Watershed",
+		         "Commodity", "Data Item", "Domain", "Domain Category", "CV (%)"}),
+		    AddedMetric = Table.AddColumn(RemovedDead, "metric", each "production_value_usd", type text),
+		    Renamed = Table.RenameColumns(AddedMetric,
+		        {{"Year", "year_key"}, {"State", "state_name"}, {"State ANSI", "state_key"}, {"Value", "value_raw"}})
+		in
+		    Renamed
+	lineageTag: c4ec4db1-fe4b-457b-acf2-8ebab1ab8f6e
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression src_chile_state =
+		let
+		    Appended = Table.Combine({
+		        src_chile_acres_planted,
+		        src_chile_acres_harvested,
+		        src_chile_yield,
+		        src_chile_price,
+		        src_chile_production_cwt,
+		        src_chile_production_usd
+		    }),
+		    Trimmed = Table.TransformColumns(Appended, {{"value_raw", Text.Trim, type text}}),
+		    Pivoted = Table.Pivot(Trimmed, List.Distinct(Trimmed[metric]), "metric", "value_raw")
+		in
+		    Pivoted
+	lineageTag: acaa8615-464c-4817-9a9c-80dce59f58a8
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

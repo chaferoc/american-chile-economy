@@ -1,0 +1,125 @@
+table dim_year
+	lineageTag: 251be0f7-2051-44c0-bc94-ce49328b6553
+
+	column year_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: bd4ff311-3d3a-42ae-bb90-d256ab223327
+		summarizeBy: none
+		sourceColumn: year_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column year
+		dataType: int64
+		formatString: 0
+		lineageTag: 4d5fb669-8971-431a-a86a-a95e410c976e
+		summarizeBy: none
+		sourceColumn: year
+
+		annotation SummarizationSetBy = User
+
+	column is_partial_coverage
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 684aed50-2d77-469b-b157-01c8451d73d2
+		summarizeBy: none
+		sourceColumn: is_partial_coverage
+
+		annotation SummarizationSetBy = Automatic
+
+	column cv_published
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 4d3efe17-2204-415c-afed-5ee0c6b631dd
+		summarizeBy: none
+		sourceColumn: cv_published
+
+		annotation SummarizationSetBy = Automatic
+
+	column estimation_method
+		dataType: string
+		lineageTag: 507a1f00-3d3a-4760-b869-e44b93f3fa70
+		summarizeBy: none
+		sourceColumn: estimation_method
+
+		annotation SummarizationSetBy = Automatic
+
+	column residual_grain
+		dataType: string
+		lineageTag: 3dc931f7-7e46-4824-87a8-43b3efaf89fc
+		summarizeBy: none
+		sourceColumn: residual_grain
+
+		annotation SummarizationSetBy = Automatic
+
+	column cpi_u_annual
+		dataType: double
+		lineageTag: 7b925337-465e-491d-8780-d1d3b1c415c6
+		summarizeBy: sum
+		sourceColumn: cpi_u_annual
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column deflator_to_base
+		dataType: double
+		lineageTag: 717c20ac-59a3-4c78-9a66-5ab4229dd4e7
+		summarizeBy: sum
+		sourceColumn: deflator_to_base
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column cash_rents_survey_status
+		dataType: string
+		lineageTag: dd79d939-7071-4096-b1fd-18f36c15f357
+		summarizeBy: none
+		sourceColumn: cash_rents_survey_status
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_year = m
+		mode: import
+		source =
+				let
+				    YearList = List.Numbers(2008, 19),
+				    YearTable = Table.FromList(YearList, Splitter.SplitByNothing(), {"year_key"}, null, ExtraValues.Error),
+				    TypedYearKey = Table.TransformColumnTypes(YearTable, {{"year_key", Int64.Type}}),
+				    AddedYear = Table.AddColumn(TypedYearKey, "year", each [year_key], Int64.Type),
+				    AddedSurveyStatus = Table.AddColumn(AddedYear, "cash_rents_survey_status", each if [year_key] = 2015 or [year_key] = 2018 then "SUSPENDED" else "PUBLISHED", type text),
+				    AddedPartialCoverage = Table.AddColumn(AddedSurveyStatus, "is_partial_coverage",
+				        each [year_key] = 2008, type logical),
+				    AddedCvPublished = Table.AddColumn(AddedPartialCoverage, "cv_published",
+				        each [year_key] >= 2021, type logical),
+				    AddedEstimationMethod = Table.AddColumn(AddedCvPublished, "estimation_method",
+				        each if [year_key] >= 2021 then "BAYESIAN_SMALL_AREA" else "SURVEY_DIRECT_EXPANSION", type text),
+				    AddedResidualGrain = Table.AddColumn(AddedEstimationMethod, "residual_grain", each if [cash_rents_survey_status] = "SUSPENDED" then null else if [year_key] = 2008 then "NONE" else if [year_key] <= 2020 then "DISTRICT" else "STATE", type nullable text),
+				                 CpiTable = #table(
+				        type table [cpi_year = Int64.Type, cpi_u_annual = number],
+				        {
+				            {2008, 215.303}, {2009, 214.537}, {2010, 218.056}, {2011, 224.939},
+				            {2012, 229.594}, {2013, 232.957}, {2014, 236.736}, {2015, 237.017},
+				            {2016, 240.007}, {2017, 245.120}, {2018, 251.107}, {2019, 255.657},
+				            {2020, 258.811}, {2021, 270.970}, {2022, 292.655}, {2023, 304.702},
+				            {2024, 313.689}, {2025, 321.943}, {2026, 331.180}
+				        }
+				    ),
+				    JoinedCpi = Table.Join(AddedResidualGrain, "year_key", CpiTable, "cpi_year", JoinKind.LeftOuter),
+				    RemovedCpiYear = Table.RemoveColumns(JoinedCpi, {"cpi_year"}),
+				    BaseCpi = List.First(Table.SelectRows(CpiTable, each [cpi_year] = 2025)[cpi_u_annual]),
+				    AddedDeflator = Table.AddColumn(RemovedCpiYear, "deflator_to_base",
+				        each BaseCpi / [cpi_u_annual], type number),
+				    SortedYears = Table.Sort(AddedDeflator, {{"year_key", Order.Ascending}})
+				in
+				    SortedYears
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

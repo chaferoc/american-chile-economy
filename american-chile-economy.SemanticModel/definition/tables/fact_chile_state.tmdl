@@ -1,0 +1,125 @@
+table fact_chile_state
+	lineageTag: f9e902dd-a308-4884-b0ce-61b013a80d09
+
+	column year_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 734a9008-1b5e-45d2-ae05-53cfbad83540
+		summarizeBy: none
+		sourceColumn: year_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column state_name
+		dataType: string
+		lineageTag: f2f50820-c34d-415d-b8a3-07067174a916
+		summarizeBy: none
+		sourceColumn: state_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column state_key
+		dataType: string
+		lineageTag: c1dbef52-87b8-4b92-86b0-058f3c4d1a4f
+		summarizeBy: none
+		sourceColumn: state_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column acres_planted
+		dataType: double
+		lineageTag: c58225c0-d7e8-4eec-8d02-c9d0f0d14402
+		summarizeBy: sum
+		sourceColumn: acres_planted
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column acres_harvested
+		dataType: double
+		lineageTag: 90be86a4-3d7f-409c-9737-fb567c1c5be0
+		summarizeBy: sum
+		sourceColumn: acres_harvested
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column yield_cwt_per_acre
+		dataType: double
+		lineageTag: 08403ead-313f-409e-886b-28b3f1b29300
+		summarizeBy: sum
+		sourceColumn: yield_cwt_per_acre
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column price_usd_per_cwt
+		dataType: double
+		lineageTag: 9be4f3a1-aa54-4281-8396-662c59e35559
+		summarizeBy: sum
+		sourceColumn: price_usd_per_cwt
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column production_cwt
+		dataType: double
+		lineageTag: ae37b458-c440-44aa-8e57-0eb2c6d387c1
+		summarizeBy: sum
+		sourceColumn: production_cwt
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column production_value_usd
+		dataType: double
+		lineageTag: d24e7da9-06a2-40df-ae2d-bf995f346c40
+		summarizeBy: sum
+		sourceColumn: production_value_usd
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column suppression_code
+		dataType: string
+		lineageTag: f79e4cdb-9f50-48f2-b838-38d049204aba
+		summarizeBy: none
+		sourceColumn: suppression_code
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fact_chile_state = m
+		mode: import
+		source =
+				let
+				    Source = src_chile_state,
+				    FilteredStates = Table.SelectRows(Source, each [state_key] <> null and [state_key] <> ""),
+				    AddedSuppression = Table.AddColumn(FilteredStates, "suppression_code", each
+				        let vals = {[acres_planted], [acres_harvested], [yield_cwt_per_acre],
+				                    [price_usd_per_cwt], [production_cwt], [production_value_usd]}
+				        in  if List.Contains(vals, "(D)") then "D"
+				            else if List.Contains(vals, "(Z)") then "Z"
+				            else null,
+				        type nullable text),
+				    Cast = Table.TransformColumns(AddedSuppression,
+				        List.Transform(
+				            {"acres_planted", "acres_harvested", "yield_cwt_per_acre",
+				             "price_usd_per_cwt", "production_cwt", "production_value_usd"},
+				            each {_, (v) => if v = null or v = "(D)" or v = "(Z)"
+				                            then null
+				                            else Number.FromText(Text.Replace(v, ",", ""), "en-US"),
+				                  type nullable number})),
+				    TypedKeys = Table.TransformColumnTypes(Cast, {{"year_key", Int64.Type}, {"state_key", type text}})
+				in
+				    TypedKeys
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

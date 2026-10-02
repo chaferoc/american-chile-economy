@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "american-chile-economy"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "d19870f9-5ea8-4e4b-b1c4-7ac9642345ca"
+  }
+}

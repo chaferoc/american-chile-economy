@@ -1,0 +1,48 @@
+relationship e5df74ce-f3f8-2eef-bc24-6d23e4d79813
+	fromColumn: dim_geography.state_ansi
+	toColumn: dim_state.state_key
+
+relationship a3995c85-bf02-2e99-5095-8615920fb56a
+	fromColumn: fact_cash_rent.geo_key
+	toColumn: dim_geography.geo_key
+
+relationship 092328aa-f1a7-0be1-d22a-b2d241bf1e00
+	fromColumn: fact_cash_rent_residual.state_key
+	toColumn: dim_state.state_key
+
+relationship f4a43015-fc9e-8b28-9650-73c593ae1b37
+	fromColumn: fact_cash_rent_residual.year_key
+	toColumn: dim_year.year_key
+
+relationship 801cce7a-0721-8ea8-1236-f8c000d65d1b
+	fromColumn: fact_cash_rent.year_key
+	toColumn: dim_year.year_key
+
+relationship 68ea683e-ba31-09fd-cbc3-85257a15c60a
+	fromColumn: fact_cash_rent.land_category_key
+	toColumn: dim_land_category.land_category_key
+
+relationship bcb009f2-d1af-b922-d281-080b696ff04b
+	fromColumn: fact_cash_rent_residual.land_category_key
+	toColumn: dim_land_category.land_category_key
+
+relationship 24de8b00-8e2b-c052-b182-06e8cd3b5c57
+	fromColumn: fact_chile_state.year_key
+	toColumn: dim_year.year_key
+
+relationship 162cf55a-6bf1-6a75-f5c4-5a17392be00f
+	fromColumn: fact_chile_state.state_key
+	toColumn: dim_state.state_key
+
+relationship 9f93dc64-796a-ddb1-8a3f-d32eb6de5481
+	fromColumn: fact_chile_state_residual.year_key
+	toColumn: dim_year.year_key
+
+relationship a7d175c2-f83a-a514-968d-f263cea2e46a
+	fromColumn: fact_chile_census.state_key
+	toColumn: dim_state.state_key
+
+relationship 905325dd-6cbc-15fc-bf48-5f22d7105fce
+	fromColumn: fact_chile_census.year_key
+	toColumn: dim_year.year_key
+

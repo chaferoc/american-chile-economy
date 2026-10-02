@@ -1,0 +1,92 @@
+table fact_cash_rent
+	lineageTag: ae54f1ea-bba9-45a2-920f-3ac549413897
+
+	column geo_key
+		dataType: string
+		isHidden
+		lineageTag: 661fdefc-a1b6-4b0f-98d1-a9fbde18f8bb
+		summarizeBy: none
+		sourceColumn: geo_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column year_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: a0802ba0-a69d-4882-9aba-c14d024267b3
+		summarizeBy: none
+		sourceColumn: year_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column land_category_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 6a66d546-84f1-48b1-9e5d-fb392d6e9f3a
+		summarizeBy: none
+		sourceColumn: land_category_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column rent_usd_per_acre
+		dataType: double
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		lineageTag: b8f90a25-bafd-44dd-886c-3ee404a3dbe3
+		summarizeBy: none
+		sourceColumn: rent_usd_per_acre
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	column cv_pct
+		dataType: double
+		formatString: 0.0
+		lineageTag: 22b71f0f-e2b1-40e2-b70e-6f0465c5f81d
+		summarizeBy: none
+		sourceColumn: cv_pct
+
+		annotation SummarizationSetBy = User
+
+	partition fact_cash_rent = m
+		mode: import
+		source =
+				let
+				    Source = src_cash_rents,
+				    CountyRowsOnly = Table.SelectRows(
+				        Source,
+				        each [County ANSI] <> null and [County ANSI] <> ""
+				    ),
+				        AddedGeoKey = Table.AddColumn(
+				        CountyRowsOnly,
+				        "geo_key",
+				        each Text.PadStart([State ANSI], 2, "0") & Text.PadStart([County ANSI], 3, "0"),
+				        type text
+				    ),
+				        JoinedLandCategory = Table.Join(
+				        AddedGeoKey, "land_category_code",
+				        Table.SelectColumns(dim_land_category, {"land_category_key", "land_category_code"}),
+				        "land_category_code",
+				        JoinKind.Inner
+				    ),
+				    RenamedYearKey = Table.RenameColumns(JoinedLandCategory, {{"Year", "year_key"}}),
+				    TypedYearKey = Table.TransformColumnTypes(RenamedYearKey, {{"year_key", Int64.Type}}),
+				    FinalColumns = Table.SelectColumns(
+				        TypedYearKey,
+				        {"geo_key", "year_key", "land_category_key", "rent_usd_per_acre", "cv_pct"}
+				    )
+				in
+				    FinalColumns
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

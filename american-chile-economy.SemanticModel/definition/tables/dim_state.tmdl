@@ -1,0 +1,101 @@
+table dim_state
+	lineageTag: adfdb4b4-31f6-45fe-9a91-eb048976c633
+
+	column state_key
+		dataType: string
+		isHidden
+		lineageTag: 218c5120-6776-4a42-8e62-4a8fcfc00392
+		summarizeBy: none
+		sourceColumn: state_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column state_name
+		dataType: string
+		lineageTag: ac245fbd-c1af-4734-8e1c-97caf3ba2572
+		summarizeBy: none
+		sourceColumn: state_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column state_abbr
+		dataType: string
+		lineageTag: 847f2b11-4363-44f0-9f24-8d441f0d1dd7
+		summarizeBy: none
+		sourceColumn: state_abbr
+
+		annotation SummarizationSetBy = Automatic
+
+	column nass_region
+		dataType: string
+		lineageTag: d9aca8c8-be9e-4533-aef0-d7b7b5be0e88
+		summarizeBy: none
+		sourceColumn: nass_region
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_state = m
+		mode: import
+		source =
+				let
+				    Source = src_cash_rents,
+				    RenamedColumns = Table.RenameColumns(
+				        Source,
+				        {{"State ANSI", "state_key"}, {"State", "state_name"}}
+				    ),
+				    SelectedColumns = Table.SelectColumns(RenamedColumns, {"state_key", "state_name"}),
+				    DistinctStates = Table.Distinct(SelectedColumns),
+				    PaddedStateKey = Table.TransformColumns(
+				        DistinctStates,
+				        {{"state_key", each Text.PadStart(_, 2, "0"), type text}}
+				    ),
+				        AddedAlaska = Table.Combine({
+				        PaddedStateKey,
+				        #table(type table [state_key = text, state_name = text], {{"02", "ALASKA"}})
+				    }),
+				    SortedStates = Table.Sort(AddedAlaska, {{"state_name", Order.Ascending}}),
+				        StateAttributes = #table(
+				        type table [map_state_name = text, state_abbr = text, nass_region = text],
+				        {
+				            {"ALABAMA", "AL", "Southeast"},          {"ALASKA", "AK", "Pacific"},          {"ARIZONA", "AZ", "Mountain"},
+				            {"ARKANSAS", "AR", "Delta"},             {"CALIFORNIA", "CA", "Pacific"},
+				            {"COLORADO", "CO", "Mountain"},          {"CONNECTICUT", "CT", "Northeast"},
+				            {"DELAWARE", "DE", "Northeast"},         {"FLORIDA", "FL", "Southeast"},
+				            {"GEORGIA", "GA", "Southeast"},          {"HAWAII", "HI", "Pacific"},
+				            {"IDAHO", "ID", "Mountain"},             {"ILLINOIS", "IL", "Corn Belt"},
+				            {"INDIANA", "IN", "Corn Belt"},          {"IOWA", "IA", "Corn Belt"},
+				            {"KANSAS", "KS", "Northern Plains"},     {"KENTUCKY", "KY", "Appalachian"},
+				            {"LOUISIANA", "LA", "Delta"},            {"MAINE", "ME", "Northeast"},
+				            {"MARYLAND", "MD", "Northeast"},         {"MASSACHUSETTS", "MA", "Northeast"},
+				            {"MICHIGAN", "MI", "Lake"},              {"MINNESOTA", "MN", "Lake"},
+				            {"MISSISSIPPI", "MS", "Delta"},          {"MISSOURI", "MO", "Corn Belt"},
+				            {"MONTANA", "MT", "Mountain"},           {"NEBRASKA", "NE", "Northern Plains"},
+				            {"NEVADA", "NV", "Mountain"},            {"NEW HAMPSHIRE", "NH", "Northeast"},
+				            {"NEW JERSEY", "NJ", "Northeast"},       {"NEW MEXICO", "NM", "Mountain"},
+				            {"NEW YORK", "NY", "Northeast"},         {"NORTH CAROLINA", "NC", "Appalachian"},
+				            {"NORTH DAKOTA", "ND", "Northern Plains"}, {"OHIO", "OH", "Corn Belt"},
+				            {"OKLAHOMA", "OK", "Southern Plains"},   {"OREGON", "OR", "Pacific"},
+				            {"PENNSYLVANIA", "PA", "Northeast"},     {"RHODE ISLAND", "RI", "Northeast"},
+				            {"SOUTH CAROLINA", "SC", "Southeast"},   {"SOUTH DAKOTA", "SD", "Northern Plains"},
+				            {"TENNESSEE", "TN", "Appalachian"},      {"TEXAS", "TX", "Southern Plains"},
+				            {"UTAH", "UT", "Mountain"},              {"VERMONT", "VT", "Northeast"},
+				            {"VIRGINIA", "VA", "Appalachian"},       {"WASHINGTON", "WA", "Pacific"},
+				            {"WEST VIRGINIA", "WV", "Appalachian"},  {"WISCONSIN", "WI", "Lake"},
+				            {"WYOMING", "WY", "Mountain"}
+				        }
+				    ),
+				    JoinedAttributes = Table.Join(
+				        SortedStates, "state_name", StateAttributes, "map_state_name", JoinKind.LeftOuter
+				    ),
+				    FinalColumns = Table.SelectColumns(
+				        JoinedAttributes, {"state_key", "state_name", "state_abbr", "nass_region"}
+				    )
+				in
+				    FinalColumns
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

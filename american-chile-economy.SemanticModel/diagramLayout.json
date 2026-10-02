@@ -1,0 +1,165 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 905,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 50
+          },
+          "nodeIndex": "chk_row_counts",
+          "nodeLineageTag": "97f0019b-fe5c-4bf7-a6ad-771c8b56937b",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 1
+        },
+        {
+          "location": {
+            "x": 284,
+            "y": 38
+          },
+          "nodeIndex": "dim_geography",
+          "nodeLineageTag": "7b33d429-4a41-4725-a4df-a3c75fde5c51",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 2
+        },
+        {
+          "location": {
+            "x": 568,
+            "y": 62
+          },
+          "nodeIndex": "dim_land_category",
+          "nodeLineageTag": "6dbdd1f9-1ec2-45fb-8d58-8540bc98215a",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 3
+        },
+        {
+          "location": {
+            "x": 852,
+            "y": 62
+          },
+          "nodeIndex": "dim_state",
+          "nodeLineageTag": "adfdb4b4-31f6-45fe-9a91-eb048976c633",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 4
+        },
+        {
+          "location": {
+            "x": 1136,
+            "y": 2
+          },
+          "nodeIndex": "dim_year",
+          "nodeLineageTag": "251be0f7-2051-44c0-bc94-ce49328b6553",
+          "size": {
+            "height": 296,
+            "width": 234
+          },
+          "zIndex": 5
+        },
+        {
+          "location": {
+            "x": 1420,
+            "y": 50
+          },
+          "nodeIndex": "fact_cash_rent",
+          "nodeLineageTag": "ae54f1ea-bba9-45a2-920f-3ac549413897",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 7
+        },
+        {
+          "location": {
+            "x": 1704,
+            "y": 26
+          },
+          "nodeIndex": "fact_cash_rent_residual",
+          "nodeLineageTag": "d9a4c1e5-78b1-4d13-b5f9-45d6a3e331bc",
+          "size": {
+            "height": 248,
+            "width": 234
+          },
+          "zIndex": 6
+        },
+        {
+          "location": {
+            "x": 1988,
+            "y": 98
+          },
+          "nodeIndex": "_Measures",
+          "nodeLineageTag": "45e70e39-18a7-44e0-96f8-9e3004f1351e",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 8
+        },
+        {
+          "location": {
+            "x": 2272,
+            "y": 0
+          },
+          "nodeIndex": "fact_chile_state",
+          "nodeLineageTag": "f9e902dd-a308-4884-b0ce-61b013a80d09",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2556,
+            "y": 2
+          },
+          "nodeIndex": "fact_chile_state_residual",
+          "nodeLineageTag": "0d5f2d5d-fefd-44a3-aa51-94e4411c7d67",
+          "size": {
+            "height": 296,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2840,
+            "y": 26
+          },
+          "nodeIndex": "fact_chile_census",
+          "nodeLineageTag": "5831435b-3469-40b0-8abb-7778e4a94c7a",
+          "size": {
+            "height": 248,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "All tables",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "All tables",
+  "defaultDiagram": "All tables"
+}

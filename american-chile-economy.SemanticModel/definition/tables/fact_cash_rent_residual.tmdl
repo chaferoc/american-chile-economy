@@ -1,0 +1,114 @@
+table fact_cash_rent_residual
+	lineageTag: d9a4c1e5-78b1-4d13-b5f9-45d6a3e331bc
+
+	column state_key
+		dataType: string
+		isHidden
+		lineageTag: c260e23b-1e79-4238-8c19-9e6469584440
+		summarizeBy: none
+		sourceColumn: state_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ag_district_code
+		dataType: string
+		lineageTag: 48ad1797-25e6-480c-aa48-f8e950501eaf
+		summarizeBy: none
+		sourceColumn: ag_district_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column year_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d82d0823-5cd5-422a-aea5-04d5772f36c4
+		summarizeBy: none
+		sourceColumn: year_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column land_category_key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8f3b83f6-cb4e-4aaf-ae80-bcdecc2bef92
+		summarizeBy: none
+		sourceColumn: land_category_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column residual_level
+		dataType: string
+		lineageTag: dc26f3a1-0903-4eba-a457-bc68223f4ca3
+		summarizeBy: none
+		sourceColumn: residual_level
+
+		annotation SummarizationSetBy = Automatic
+
+	column rent_usd_per_acre
+		dataType: double
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		lineageTag: 67f6afce-788c-424a-8f67-7c1019a3e8d5
+		summarizeBy: none
+		sourceColumn: rent_usd_per_acre
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	column cv_pct
+		dataType: double
+		formatString: 0.0
+		lineageTag: 0d05e5dc-52f1-4dc1-bd6d-a6c8eb672624
+		summarizeBy: none
+		sourceColumn: cv_pct
+
+		annotation SummarizationSetBy = User
+
+	partition fact_cash_rent_residual = m
+		mode: import
+		source =
+				let
+				    Source = src_cash_rents,
+				    ResidualRowsOnly = Table.SelectRows(
+				        Source,
+				        each [County] = "OTHER COUNTIES"
+				          or [County] = "OTHER (COMBINED) COUNTIES"
+				    ),
+				    AddedResidualLevel = Table.AddColumn(
+				        ResidualRowsOnly,
+				        "residual_level",
+				        each if [County] = "OTHER COUNTIES" then "STATE" else "DISTRICT",
+				        type text
+				    ),
+				        JoinedLandCategory = Table.Join(
+				        AddedResidualLevel, "land_category_code",
+				        Table.SelectColumns(dim_land_category, {"land_category_key", "land_category_code"}),
+				        "land_category_code",
+				        JoinKind.Inner
+				    ),
+				    AddedStateKey = Table.AddColumn(JoinedLandCategory, "state_key",
+				        each Text.PadStart([State ANSI], 2, "0"), type text),
+				    AddedDistrictCode = Table.AddColumn(AddedStateKey, "ag_district_code",
+				        each if [residual_level] = "STATE" then null else [Ag District Code], type text),
+				    RenamedYearKey = Table.RenameColumns(AddedDistrictCode, {{"Year", "year_key"}}),
+				    TypedYearKey = Table.TransformColumnTypes(RenamedYearKey, {{"year_key", Int64.Type}}),
+				    FinalColumns = Table.SelectColumns(
+				        TypedYearKey,
+				        {"state_key", "ag_district_code", "year_key", "land_category_key",
+				         "residual_level", "rent_usd_per_acre", "cv_pct"}
+				    )
+				in
+				    FinalColumns
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

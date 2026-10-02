@@ -1,0 +1,125 @@
+table chk_row_counts
+	lineageTag: 97f0019b-fe5c-4bf7-a6ad-771c8b56937b
+
+	column check
+		dataType: string
+		lineageTag: 3282e4c6-62fe-4512-9392-8b9223f94b11
+		summarizeBy: none
+		sourceColumn: check
+
+		annotation SummarizationSetBy = Automatic
+
+	column actual
+		dataType: double
+		lineageTag: a8164416-c8cf-4cec-98d7-5f00664b183a
+		summarizeBy: sum
+		sourceColumn: actual
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column expected
+		dataType: double
+		lineageTag: 83575ab7-6722-4dd5-90a9-7dd0e4619e44
+		summarizeBy: sum
+		sourceColumn: expected
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column delta
+		dataType: int64
+		formatString: 0
+		lineageTag: 1d5005f8-f137-48c3-ae97-871a19f0da3e
+		summarizeBy: sum
+		sourceColumn: delta
+
+		annotation SummarizationSetBy = Automatic
+
+	column status
+		dataType: string
+		lineageTag: 64728e22-2ca2-4601-8fa8-eda4d36f9570
+		summarizeBy: none
+		sourceColumn: status
+
+		annotation SummarizationSetBy = Automatic
+
+	partition chk_row_counts = m
+		mode: import
+		source =
+				let
+				    Checks = #table(
+				        type table [check = text, actual = number, expected = number],
+				        {
+				            {"src_cash_rents (post-filter)",  Table.RowCount(src_cash_rents),           85413},
+				            {"fact_cash_rent",                Table.RowCount(fact_cash_rent),           79064},
+				            {"fact_cash_rent_residual",       Table.RowCount(fact_cash_rent_residual),   6349},
+				            {"reconcile: fact + residual",
+				                Table.RowCount(fact_cash_rent) + Table.RowCount(fact_cash_rent_residual), 85413},
+				            {"dim_geography",                 Table.RowCount(dim_geography),             2938},
+				            {"dim_state",                     Table.RowCount(dim_state),                   50},
+				            {"dim_year",                      Table.RowCount(dim_year),                    19},
+				            {"dim_land_category",             Table.RowCount(dim_land_category),            3},
+				            {"cv present: county",            List.NonNullCount(fact_cash_rent[cv_pct]),        29346},
+				            {"cv present: residual",          List.NonNullCount(fact_cash_rent_residual[cv_pct]), 749},
+				            {"orphan geo_key",
+				                List.Count(List.Difference(List.Distinct(fact_cash_rent[geo_key]), dim_geography[geo_key])), 0},
+				            {"orphan year_key (fact)",
+				                List.Count(List.Difference(List.Distinct(fact_cash_rent[year_key]), dim_year[year_key])), 0},
+				            {"orphan year_key (residual)",
+				                List.Count(List.Difference(List.Distinct(fact_cash_rent_residual[year_key]), dim_year[year_key])), 0},
+				            {"orphan state_key (residual)",
+				                List.Count(List.Difference(List.Distinct(fact_cash_rent_residual[state_key]), dim_state[state_key])), 0},
+				            {"orphan state_ansi (geography)",
+				                List.Count(List.Difference(List.Distinct(dim_geography[state_ansi]), dim_state[state_key])), 0},
+				            {"orphan land_category_key",
+				                List.Count(List.Difference(List.Distinct(fact_cash_rent[land_category_key]), dim_land_category[land_category_key])), 0},
+				            {"dim_geography key uniqueness",
+				                Table.RowCount(dim_geography) - List.Count(List.Distinct(dim_geography[geo_key])), 0},
+				            {"dim_year suspension rows",
+				                List.Count(List.Select(dim_year[cash_rents_survey_status], each _ = "SUSPENDED")), 2},
+				            {"dim_year residual_grain nulls",
+				                Table.RowCount(dim_year) - List.NonNullCount(dim_year[residual_grain]), 2},
+				            {"src_chile_state",               Table.RowCount(src_chile_state),            66},
+				            {"fact_chile_state",              Table.RowCount(fact_chile_state),           62},
+				            {"fact_chile_state_residual",     Table.RowCount(fact_chile_state_residual),   4},
+				            {"reconcile: chile fact + residual",
+				                Table.RowCount(fact_chile_state) + Table.RowCount(fact_chile_state_residual), 66},
+				            {"chile suppression rows",
+				                List.Count(List.Select(fact_chile_state[suppression_code], each _ <> null)), 5},
+				            {"orphan year_key (chile fact)",
+				                List.Count(List.Difference(List.Distinct(fact_chile_state[year_key]), dim_year[year_key])), 0},
+				            {"orphan year_key (chile residual)",
+				                List.Count(List.Difference(List.Distinct(fact_chile_state_residual[year_key]), dim_year[year_key])), 0},
+				            {"orphan state_key (chile fact)",
+				                List.Count(List.Difference(List.Distinct(fact_chile_state[state_key]), dim_state[state_key])), 0},
+				            {"chile fact key uniqueness",
+				                Table.RowCount(fact_chile_state)
+				                    - Table.RowCount(Table.Distinct(Table.SelectColumns(fact_chile_state, {"state_key", "year_key"}))), 0},
+				            {"fact_chile_census",             Table.RowCount(fact_chile_census),         150},
+				            {"census acres present",
+				                List.NonNullCount(fact_chile_census[acres_harvested]), 136},
+				            {"census suppression (D)",
+				                List.Count(List.Select(fact_chile_census[suppression_code], each _ = "D")), 13},
+				            {"census suppression (Z)",
+				                List.Count(List.Select(fact_chile_census[suppression_code], each _ = "Z")), 1},
+				            {"orphan year_key (chile census)",
+				                List.Count(List.Difference(List.Distinct(fact_chile_census[year_key]), dim_year[year_key])), 0},
+				            {"orphan state_key (chile census)",
+				                List.Count(List.Difference(List.Distinct(fact_chile_census[state_key]), dim_state[state_key])), 0},
+				            {"census fact key uniqueness",
+				                Table.RowCount(fact_chile_census)
+				                    - Table.RowCount(Table.Distinct(Table.SelectColumns(fact_chile_census, {"state_key", "year_key"}))), 0}
+				        }
+				    ),
+				    AddedDelta  = Table.AddColumn(Checks, "delta", each [actual] - [expected], Int64.Type),
+				    AddedStatus = Table.AddColumn(AddedDelta, "status", each if [delta] = 0 then "OK" else "FAIL", type text)
+				in
+				    AddedStatus
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

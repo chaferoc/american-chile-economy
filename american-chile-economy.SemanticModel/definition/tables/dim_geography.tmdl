@@ -1,0 +1,95 @@
+table dim_geography
+	lineageTag: 7b33d429-4a41-4725-a4df-a3c75fde5c51
+
+	column geo_key
+		dataType: string
+		isHidden
+		lineageTag: e73610e8-b097-4bf9-9a72-c3db829a62c3
+		summarizeBy: none
+		sourceColumn: geo_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column state_ansi
+		dataType: string
+		isHidden
+		lineageTag: aa57d9f6-be0a-4a03-a54c-6b0d5028c89e
+		summarizeBy: none
+		sourceColumn: state_ansi
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column county_ansi
+		dataType: string
+		lineageTag: bd27cae0-83a2-4aef-941c-10a6495788f4
+		summarizeBy: none
+		sourceColumn: county_ansi
+
+		annotation SummarizationSetBy = Automatic
+
+	column county_name
+		dataType: string
+		lineageTag: 6af1e9c7-60ce-43e6-9590-228dfec612c9
+		summarizeBy: none
+		sourceColumn: county_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column ag_district_code
+		dataType: string
+		lineageTag: 7df565d2-25a5-49da-88e3-44e4cfa3e51f
+		summarizeBy: none
+		sourceColumn: ag_district_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column ag_district_name
+		dataType: string
+		lineageTag: 196a482d-ee52-4d50-834a-bffc514191a1
+		summarizeBy: none
+		sourceColumn: ag_district_name
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_geography = m
+		mode: import
+		source =
+				let
+				    Source = src_cash_rents,
+				    CountyRowsOnly = Table.SelectRows(
+				        Source,
+				        each [County ANSI] <> null and [County ANSI] <> ""
+				    ),
+				    AddedGeoKey = Table.AddColumn(
+				        CountyRowsOnly,
+				        "geo_key",
+				        each Text.PadStart([State ANSI], 2, "0") & Text.PadStart([County ANSI], 3, "0"),
+				        type text
+				    ),
+				    RenamedColumns = Table.RenameColumns(
+				        AddedGeoKey,
+				        {
+				            {"State ANSI", "state_ansi"},
+				            {"County ANSI", "county_ansi"},
+				            {"County", "county_name"},
+				            {"Ag District Code", "ag_district_code"},
+				            {"Ag District", "ag_district_name"}
+				        }
+				    ),
+				    SelectedColumns = Table.SelectColumns(
+				        RenamedColumns,
+				        {"geo_key", "state_ansi", "county_ansi", "county_name",
+				         "ag_district_code", "ag_district_name"}
+				    ),
+				    DistinctGeographies = Table.Distinct(SelectedColumns)
+				in
+				    DistinctGeographies
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
