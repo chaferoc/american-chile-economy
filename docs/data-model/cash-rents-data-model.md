@@ -1,13 +1,13 @@
 # USDA NASS County Cash Rents — Data Model Specification
 
-**Version:** 0.5.5
+**Version:** 0.5.6
 **Status:** Three facts built and validated — county cash rents, state chile, and
 chile Census of Agriculture. Twenty measures written and validated: fifteen on
 the cash rents star, five on the chile facts (§10.8). Report layer: all three
 published pages are built — Chile Coverage, Iron County, Your County (§11);
-publishing in progress (§11.4). `chk_row_counts` at 35 assertions, all passing.
+published to web 2026-10-02 and embedded in a WordPress draft (§11.4). `chk_row_counts` at 35 assertions, all passing.
 §10.6 and §10.7 resolved.
-**Last updated:** 2026-10-01
+**Last updated:** 2026-10-02
 **Owner:** Aaron / Heat & Harvest Data Desk
 **Repo:** `github.com/chaferoc/american-chile-economy`, at
 `docs/data-model/cash-rents-data-model.md`
@@ -1402,15 +1402,58 @@ scrollbar; column header text reduced to 13.6 pt with text wrap on; table sorted
 by Year ascending (a header click had re-sorted it by MO counties); footnote
 width 990.
 
-### 11.4 Publishing — in progress
+**Recast as the counter-example (2026-10-01).** Under the editorial direction the
+page is no longer the lead, so the line chart now carries the framing in its
+title and subtitle, as the Chile Coverage visuals do. Title: "Iron County,
+Missouri: pastureland rent per acre." Subtitle: "The cheap end of the rent scale,
+and the least certain. Iron's 2025 estimate of $43.50 carried a 28.7% CV, the
+highest of Missouri's 106 county pasture figures. Doña Ana's irrigated estimates
+have not exceeded 13.2% since CVs began in 2021." Both figures computed against
+county-scoped rows before use: Laclede is second in Missouri 2025 at 22.2%; Doña
+Ana's six published CVs (2021–2026) run 5.4–13.2. The $43.50 appears only with
+its CV attached (D18).
 
-Done: non-published pages hidden; tabs reordered (§11.1); Your County opened to
-all land categories (§11.5).
+### 11.4 Publishing — published to web 2026-10-02
+
+**Report.** Published from Desktop to My workspace (aaron@heatandharvest.com),
+republished with Replace after the fixes below. In the Service the Pages pane
+lists only Chile Coverage, Iron County and Your County, and the report opens on
+Chile Coverage. Before publishing to web:
+- Filters pane hidden for readers (eye icon in the Filters pane header). It was
+  exposing visual-level filter cards such as "Chile Acres Harvested is (All)".
+- Alaska removed from the Your County State slicer (§11.5).
+
+**Tenant.** The account came from a self-service Fabric sign-up, which put
+heatandharvest.com in an unmanaged Microsoft Entra directory with no admin.
+Creating an embed code failed with "Contact your admin to enable embed code
+creation." Aaron completed an internal admin takeover in the Microsoft 365 admin
+center (DNS TXT verification on heatandharvest.com; MX untouched) and is the
+directory's global admin. In the Power BI admin portal, Tenant settings → Export
+and sharing → Publish to web was already Enabled; "Allow users to create new
+embed codes" was turned on for the entire organization. Block Public Internet
+Access was confirmed disabled; the warning beside the toggle was generic.
+
+**Embed code.** Public link, also the iframe src:
+`https://app.powerbi.com/view?r=eyJrIjoiMzdmY2NhN2MtMmMxNi00NDg2LTkxYzAtZDRhMTQxYzUyMzI5IiwidCI6IjAwNmM3ZWM0LTY4YTctNGE4YS1hOGJlLTQ1ODA1NmEzOTlkOCJ9`
+Default page left on Default (the page active at save, Chile Coverage); the
+preview showed 1 of 3. Codes are managed under Admin portal → Embed Codes.
+
+**WordPress.** Draft post 223 on heatandharvest.com, "The American Chile Economy
+(draft)", created through the WPVibe connector. The iframe sits in a Custom HTML
+block inside a responsive wrapper (`padding-top: calc(56.25% + 36px)`: the 16:9
+page plus Power BI's navigation bar) in place of the fixed 600 × 373.5. In the
+default ColorMag sidebar column (about 740 px) the report rendered at 36%, too
+small to read, so the post's own layout is set to no sidebar
+(`colormag_page_sidebar_layout = no_sidebar`, `colormag_page_container_layout =
+no_sidebar_full_width`, the 1,140 px container); it now renders at 55%. A link
+under the embed, "Open the interactive report full screen", opens the public
+link in a new tab for small screens. WordPress kept the iframe intact on save.
 
 Open:
-1. Iron County page text recast as the counter-example rather than the lead.
-2. Publish from Desktop to My workspace (aaron@heatandharvest.com).
-3. Publish to web, then embed the iframe in the WordPress post.
+1. Article text into post 223, retitled; homepage tag `science` (ID 20) or
+   `annual-report` (ID 22); photos; publish.
+2. Later, not blocking: a ColorMag template that keeps the sidebar on wide
+   monitors while giving the embed full width.
 
 ### 11.5 Your County page — built 2026-10-01
 
@@ -1455,6 +1498,12 @@ led). Missouri / Iron / Pastureland still reproduces the Iron County page. The
 footnote rank sentence now reads "among the state's counties publishing an
 estimate for that land category that year."
 
+**Alaska removed from the State slicer (2026-10-01).** Alaska is in `dim_state`
+only because of the Census chile rows (D17) and has no cash-rent rows. Selecting
+it left the County slicer holding the previous county and the table empty. A
+basic visual-level filter on the State slicer excludes ALASKA; the model is
+unchanged and no note is shown to readers.
+
 ### 11.6 Chile Coverage page — built 2026-10-01
 
 Three visuals, each answering one part of the §9.12 finding.
@@ -1482,6 +1531,7 @@ the March 2019 and April 2024 program reviews.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.5.6 | 2026-10-02 | **Published to web; embedded in WordPress draft.** Iron County line chart titled and subtitled as the counter-example (§11.3). Filters pane hidden for readers; Alaska excluded from the Your County State slicer (§11.5). Admin takeover of the heatandharvest.com Microsoft directory and new embed codes enabled; embed URL recorded; WordPress draft post 223 with a responsive wrapper, no-sidebar layout and a full-screen link (§11.4). No model changes. |
 | 0.5.5 | 2026-10-01 | **Publishing begun; §10.7 resolved by framing.** Non-published pages hidden; published order Chile Coverage, Iron County, Your County, per `docs/editorial-direction.md` (§11.1). Your County: Pastureland page filter replaced by a single-select Land category slicer, validated on New Mexico / Doña Ana / Irrigated cropland for 2009, 2021, 2025 and 2026, footnote made category-neutral (§11.5). §10.7: the section-one lead no longer claims land cost is not what is happening to chile; Doña Ana kept as the setting, highest NM irrigated rent in 13 of 16 years. §11.4 becomes the publishing checklist. No model changes. |
 | 0.5.4 | 2026-10-01 | **Chile Coverage page built (§11.6); §10.8 resolved for acres.** Five chile measures: `Chile Acres Harvested`, `Chile Census Acres Harvested`, `Chile Coverage Status`, `Chile Coverage Mark`, `Chile Coverage Color` — none coalesce a missing row to 0. Validated against the Census totals and the §9.6 coverage table (95 cells, five Withheld). Page: survey line chart where Arizona and Texas end at 2018, a coverage grid with one-character marks, and a separate Census column chart. Status tooltip removed because tooltips exist only on drawn points. Iron County footnote now defines Confidence. Measure count 15 → 20. Yield and price deferred. |
 | 0.5.3 | 2026-10-01 | **Your County page built (§11.5).** State and County single-select slicers over the `dim_state → dim_geography` snowflake. `County Rank in State` and `Rent vs State Median` gain a `HASONEVALUE ( dim_geography[geo_key] )` guard after a state-only context ranked the state average as a county; single-county results unchanged (Missouri / Iron reproduces the Iron County page). Generic column and slicer labels; footnote defines the Confidence thresholds. Open: same definition on the Iron County footnote. |
