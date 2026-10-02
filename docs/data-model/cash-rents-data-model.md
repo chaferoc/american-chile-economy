@@ -1,10 +1,10 @@
 # USDA NASS County Cash Rents — Data Model Specification
 
-**Version:** 0.5.3
+**Version:** 0.5.4
 **Status:** Three facts built and validated — county cash rents, state chile, and
-chile Census of Agriculture. Fifteen measures written and validated, all on the
-cash rents star; no chile measures yet. Report layer: the published Iron County
-and Your County pages are built (§11); the chile coverage page remains. `chk_row_counts` at 35 assertions, all
+chile Census of Agriculture. Twenty measures written and validated: fifteen on
+the cash rents star, five on the chile facts (§10.8). Report layer: all three
+published pages are built — Iron County, Your County, Chile Coverage (§11). `chk_row_counts` at 35 assertions, all
 passing. §10.6 resolved.
 **Last updated:** 2026-10-01
 **Owner:** Aaron / Heat & Harvest Data Desk
@@ -1264,8 +1264,27 @@ setting, not a cost of production. Revisit at the ERS ingest (§9), which may
 support a state-level chile-acreage-weighted framing that this county-level
 pairing cannot.
 
-**10.8 — Chile measures and the intermittency problem. Open.**
-No DAX measures exist on either chile fact. Before any chile visual is built,
+**10.8 — Chile measures and the intermittency problem. Resolved 2026-10-01
+for acres; yield and price deferred.**
+Five measures built, all in `_Measures`:
+
+| Measure | Definition |
+|---|---|
+| `Chile Acres Harvested` | `SUM ( fact_chile_state[acres_harvested] )`. Blank over no rows or withheld rows; never 0. |
+| `Chile Census Acres Harvested` | `SUM ( fact_chile_census[acres_harvested] )`. |
+| `Chile Coverage Status` | Single state × year only (`HASONEVALUE` on both keys). Not yet published (year after the latest survey year), Not estimated (no row), Withheld (`D`), else Published. `Z` counts as Published. |
+| `Chile Coverage Mark` | ● / W / – from the status; blank for Not yet published. |
+| `Chile Coverage Color` | `#CFE3CC` / `#F6D7A7` / `#E6E6E6` from the status. Withheld reuses the Low-confidence amber. |
+
+Validated 2026-10-01. Census: New Mexico, Texas and Ohio match all three years,
+and the totals match exactly (31,265 / 23,423 / 23,122). Status: all 95 cells
+for the five states × 2008–2026 match the §9.6 coverage table, with exactly
+five Withheld cells for the five `D` rows.
+
+Yield and price are not built; the article uses acres only. When they are, the
+derivation below stands.
+
+The original problem statement follows. Before any chile visual is built,
 the measures need an answer to a problem the cash rents star does not have:
 a gap in a state series has three causes and they render identically. A state
 may be *out of program* and have no row at all (Arizona 2019–2025, Texas
@@ -1324,6 +1343,7 @@ was recorded only in chat history, and a later session restarted it from step 1.
 | Iron County One-Pager | Letter-landscape (1056×816) printed sheet: title, table, CV footnote | Interview artifact. Not published. |
 | Iron County | Published page 1 | Built (§11.3) |
 | Your County | Published page 2: reader lookup by state and county | Built (§11.5) |
+| Chile Coverage | Published page 3: survey coverage vs. Census acres | Built (§11.6) |
 
 All three Iron County pages carry hidden page-level filters for Missouri, Iron and
 Pastureland, set on attribute columns because the surrogate keys are hidden from
@@ -1366,10 +1386,8 @@ scrollbar; column header text reduced to 13.6 pt with text wrap on; table sorted
 by Year ascending (a header click had re-sorted it by MO counties); footnote
 width 990.
 
-### 11.4 Pages not started
+### 11.4 Not started
 
-- **Chile coverage** — Census harvested acres by state from `fact_chile_census`.
-  Blocked on §10.8 only if it draws on `fact_chile_state`.
 - **Publish to web** from My workspace (aaron@heatandharvest.com), then embed in
   the WordPress post.
 
@@ -1398,8 +1416,29 @@ width 990.
 - **Layout** was resized and rearranged by hand to fit all eight columns without
   an internal scrollbar.
 
-**Open:** add the Confidence threshold sentence to the Iron County page footnote,
-which has the column but no definition.
+The Confidence threshold sentence was added to the Iron County page footnote
+on 2026-10-01, so both pages define the column.
+
+### 11.6 Chile Coverage page — built 2026-10-01
+
+Three visuals, each answering one part of the §9.12 finding.
+
+- **Line chart, survey acres by state** (`Chile Acres Harvested`, legend
+  `dim_state[state_name]`, linear interpolation). Arizona and Texas end at 2018;
+  California ends at 2024 (2025 withheld); Ohio draws no line because both of
+  its years are withheld. Nothing falls to zero (§10.8). Subtitle says so and
+  names Ohio's absence. A `Chile Coverage Status` tooltip was tried and removed:
+  tooltips attach only to drawn points, so it could only ever say Published.
+- **Coverage grid** (matrix, five states × 2008–2025, `Chile Coverage Mark`
+  with `Chile Coverage Color` background). One-character marks keep 18 year
+  columns on the canvas; the full labels did not fit. 2026 drops out because
+  the mark is blank for Not yet published. Subtotals off. Subtitle is the legend.
+- **Census column chart** (`Chile Census Acres Harvested`, legend
+  `dim_year[year]`, five states). A separate visual by design: §9.11 forbids
+  charting Census and survey as one series. Subtitle states why.
+
+Source line names the Vegetables Annual Summary, the 2012/2017/2022 Census, and
+the March 2019 and April 2024 program reviews.
 
 ---
 
@@ -1407,6 +1446,7 @@ which has the column but no definition.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.5.4 | 2026-10-01 | **Chile Coverage page built (§11.6); §10.8 resolved for acres.** Five chile measures: `Chile Acres Harvested`, `Chile Census Acres Harvested`, `Chile Coverage Status`, `Chile Coverage Mark`, `Chile Coverage Color` — none coalesce a missing row to 0. Validated against the Census totals and the §9.6 coverage table (95 cells, five Withheld). Page: survey line chart where Arizona and Texas end at 2018, a coverage grid with one-character marks, and a separate Census column chart. Status tooltip removed because tooltips exist only on drawn points. Iron County footnote now defines Confidence. Measure count 15 → 20. Yield and price deferred. |
 | 0.5.3 | 2026-10-01 | **Your County page built (§11.5).** State and County single-select slicers over the `dim_state → dim_geography` snowflake. `County Rank in State` and `Rent vs State Median` gain a `HASONEVALUE ( dim_geography[geo_key] )` guard after a state-only context ranked the state average as a county; single-county results unchanged (Missouri / Iron reproduces the Iron County page). Generic column and slicer labels; footnote defines the Confidence thresholds. Open: same definition on the Iron County footnote. |
 | 0.5.2 | 2026-09-30 | **Iron County page built; §11.3 closed.** Linear interpolation, CV footnote, and conditional formatting done. Two measures added to §8.2: `Confidence Band` (D4 thresholds, single-row guard, blank before 2021) and `Confidence Band Color` (field-value background, `Low` only). Validated against the Iron County series. Measure count 13 → 15. Table widened to 990 with header text wrap after the new column forced an internal scrollbar. |
 | 0.5.1 | 2026-09-30 | **§11 Report layer added; changelog renumbered to §12.** Records the four pages in the file, the Iron County page decisions (built from Iron County Pastureland; cards and year slicer removed under D18; table and §3.3 annotation kept; smoothed line traced to the Fluent2 theme default, not a build step), and its open items (linear interpolation, CV footnote, `Confidence Band`, conditional formatting). Adds the working rule that sessions start from the spec and the most recent session, and that verified work reopens only on a named defect. Notes that the repo `.pbix` predates the Iron County page. No model changes. |
