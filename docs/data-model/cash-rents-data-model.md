@@ -1,11 +1,12 @@
 # USDA NASS County Cash Rents — Data Model Specification
 
-**Version:** 0.5.4
+**Version:** 0.5.5
 **Status:** Three facts built and validated — county cash rents, state chile, and
 chile Census of Agriculture. Twenty measures written and validated: fifteen on
 the cash rents star, five on the chile facts (§10.8). Report layer: all three
-published pages are built — Iron County, Your County, Chile Coverage (§11). `chk_row_counts` at 35 assertions, all
-passing. §10.6 resolved.
+published pages are built — Chile Coverage, Iron County, Your County (§11);
+publishing in progress (§11.4). `chk_row_counts` at 35 assertions, all passing.
+§10.6 and §10.7 resolved.
 **Last updated:** 2026-10-01
 **Owner:** Aaron / Heat & Harvest Data Desk
 **Repo:** `github.com/chaferoc/american-chile-economy`, at
@@ -1247,7 +1248,18 @@ does not settle a statistical question, but "nothing happened" versus "ground
 got tight when the neighbors' lease came up" points at different halves of it,
 and either is quotable.
 
-**10.7 — Doña Ana irrigated cropland is not a chile rent proxy. Open.**
+**10.7 — Doña Ana irrigated cropland is not a chile rent proxy. Resolved
+2026-10-01 by framing, not by data.** The article uses the setting framing below.
+The section-one lead in `docs/editorial-direction.md` now reads: rent on the chile
+valley's best irrigated ground has gone nowhere in real terms since 2009, and if
+something is squeezing New Mexico chile, USDA's rent figures don't show it here.
+The earlier line, that land cost is not what is happening to chile, is withdrawn
+as a causal claim this figure cannot carry. Doña Ana stays as the county: it was
+New Mexico's highest irrigated county rent in 13 of the 16 published years (Luna
+led in 2020 and 2024, San Juan in 2023), and the comparison it serves is the
+premium end of the rent scale against Iron County pastureland at the cheap end.
+The original problem statement follows.
+
 The 2026 irrigated figure of $296.00/acre, +78.9% above the NM median of
 $165.50 across 10 counties (§8.2), is sound as a cash rents fact. The
 interpretation attached to it is not: Doña Ana's irrigated acreage is dominated
@@ -1341,16 +1353,20 @@ was recorded only in chat history, and a later session restarted it from step 1.
 | Page 1 | Scratch validation: national measures by year and land category | Working page. Not published. |
 | Iron County Pastureland | 2026-09-19 interview page: line chart, four cards, year slicer, table | Interview artifact. Not published. |
 | Iron County One-Pager | Letter-landscape (1056×816) printed sheet: title, table, CV footnote | Interview artifact. Not published. |
-| Iron County | Published page 1 | Built (§11.3) |
-| Your County | Published page 2: reader lookup by state and county | Built (§11.5) |
-| Chile Coverage | Published page 3: survey coverage vs. Census acres | Built (§11.6) |
+| Chile Coverage | Published page 1: survey coverage vs. Census acres | Built (§11.6) |
+| Iron County | Published page 2: the counter-example | Built (§11.3) |
+| Your County | Published page 3: reader lookup by state, county and land category | Built (§11.5) |
 
 All three Iron County pages carry hidden page-level filters for Missouri, Iron and
 Pastureland, set on attribute columns because the surrogate keys are hidden from
 report view.
 
-The repo `.pbix` must be committed with this version; the 2026-09-27 commit
-predates the Iron County page.
+**Visibility and order (2026-10-01).** The three non-published pages are hidden
+(Hide page), so Publish to web shows only the published three; they stay in the
+`.pbix` and the repo. Published tabs follow the editorial direction
+(`docs/editorial-direction.md`): Chile Coverage leads, Iron County is the
+counter-example, Your County carries the reader's own lookup. The report opens on
+the page active at save, which must be Chile Coverage.
 
 ### 11.2 Iron County page — decisions
 
@@ -1386,15 +1402,20 @@ scrollbar; column header text reduced to 13.6 pt with text wrap on; table sorted
 by Year ascending (a header click had re-sorted it by MO counties); footnote
 width 990.
 
-### 11.4 Not started
+### 11.4 Publishing — in progress
 
-- **Publish to web** from My workspace (aaron@heatandharvest.com), then embed in
-  the WordPress post.
+Done: non-published pages hidden; tabs reordered (§11.1); Your County opened to
+all land categories (§11.5).
+
+Open:
+1. Iron County page text recast as the counter-example rather than the lead.
+2. Publish from Desktop to My workspace (aaron@heatandharvest.com).
+3. Publish to web, then embed the iframe in the WordPress post.
 
 ### 11.5 Your County page — built 2026-10-01
 
 - **Duplicated from Iron County.** The page-level Missouri and Iron filters were
-  removed; the Pastureland filter stays.
+  removed. The Pastureland filter was kept at first and removed 2026-10-01 (below).
 - **Two dropdown slicers**, State (`dim_state[state_name]`) and County
   (`dim_geography[county_name]`), both single-select. The `dim_state →
   dim_geography` snowflake (§6.7) narrows the County list to the chosen state,
@@ -1418,6 +1439,21 @@ width 990.
 
 The Confidence threshold sentence was added to the Iron County page footnote
 on 2026-10-01, so both pages define the column.
+
+**Land category slicer (2026-10-01).** The editorial direction leads on irrigated
+cropland and asks readers to check their own ground, which a pastureland-only
+page could not serve. The Pastureland page filter was replaced by a third
+single-select dropdown on `dim_land_category[land_category_label]`, titled Land
+category by renaming the field for the visual, as State and County were. No
+measure changed: the rate and peer measures were already guarded on a single
+land category. Validated against county-scoped extract rows for New Mexico /
+Doña Ana / Irrigated cropland: 2009 $195.00, median $95.50, +104.2%, rank 1 of
+12; 2021 $248.00, CV 5.7 High, $122.50, +102.4%, 1 of 16; 2025 $240.00, CV 6.9
+High, $140.00, +71.4%, 1 of 13; 2026 $296.00, CV 13.2 Moderate, $165.50, +78.9%,
+1 of 10. Rank 2 in 2020, 2023 and 2024 matches the extract (Luna, San Juan, Luna
+led). Missouri / Iron / Pastureland still reproduces the Iron County page. The
+footnote rank sentence now reads "among the state's counties publishing an
+estimate for that land category that year."
 
 ### 11.6 Chile Coverage page — built 2026-10-01
 
@@ -1446,6 +1482,7 @@ the March 2019 and April 2024 program reviews.
 
 | Version | Date | Change |
 |---|---|---|
+| 0.5.5 | 2026-10-01 | **Publishing begun; §10.7 resolved by framing.** Non-published pages hidden; published order Chile Coverage, Iron County, Your County, per `docs/editorial-direction.md` (§11.1). Your County: Pastureland page filter replaced by a single-select Land category slicer, validated on New Mexico / Doña Ana / Irrigated cropland for 2009, 2021, 2025 and 2026, footnote made category-neutral (§11.5). §10.7: the section-one lead no longer claims land cost is not what is happening to chile; Doña Ana kept as the setting, highest NM irrigated rent in 13 of 16 years. §11.4 becomes the publishing checklist. No model changes. |
 | 0.5.4 | 2026-10-01 | **Chile Coverage page built (§11.6); §10.8 resolved for acres.** Five chile measures: `Chile Acres Harvested`, `Chile Census Acres Harvested`, `Chile Coverage Status`, `Chile Coverage Mark`, `Chile Coverage Color` — none coalesce a missing row to 0. Validated against the Census totals and the §9.6 coverage table (95 cells, five Withheld). Page: survey line chart where Arizona and Texas end at 2018, a coverage grid with one-character marks, and a separate Census column chart. Status tooltip removed because tooltips exist only on drawn points. Iron County footnote now defines Confidence. Measure count 15 → 20. Yield and price deferred. |
 | 0.5.3 | 2026-10-01 | **Your County page built (§11.5).** State and County single-select slicers over the `dim_state → dim_geography` snowflake. `County Rank in State` and `Rent vs State Median` gain a `HASONEVALUE ( dim_geography[geo_key] )` guard after a state-only context ranked the state average as a county; single-county results unchanged (Missouri / Iron reproduces the Iron County page). Generic column and slicer labels; footnote defines the Confidence thresholds. Open: same definition on the Iron County footnote. |
 | 0.5.2 | 2026-09-30 | **Iron County page built; §11.3 closed.** Linear interpolation, CV footnote, and conditional formatting done. Two measures added to §8.2: `Confidence Band` (D4 thresholds, single-row guard, blank before 2021) and `Confidence Band Color` (field-value background, `Low` only). Validated against the Iron County series. Measure count 13 → 15. Table widened to 990 with header text wrap after the new column forced an internal scrollbar. |

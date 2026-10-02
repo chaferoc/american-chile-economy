@@ -1,7 +1,8 @@
 # Editorial direction — article one
 
 **Decided:** 2026-10-01
-**Status:** Active. Supersedes the prior framing.
+**Status:** Active. Supersedes the prior framing. Section-one lead revised
+2026-10-01 to resolve spec §10.7.
 **Repo path:** `docs/editorial-direction.md`
 **Related:** `docs/data-model/cash-rents-data-model.md` (v0.3.3+)
 
@@ -15,8 +16,8 @@ ask moves from premise to conclusion.
 
 The prior framing — "why producers should fill out the NASS survey" — made it
 a cattle article on a spicy-food publication. Two stories wearing one name. The
-new framing, "what chile ground actually costs, and why we know it," lands the
-same ask at the end, having earned it.
+new framing, "what the chile valley's best ground costs, and why we know it,"
+lands the same ask at the end, having earned it.
 
 Nothing is cut. The interview stays. What changes is what the interview is
 *doing*: Kim Harris enters as the person who explains how the number gets made
@@ -36,7 +37,22 @@ own numbers disagree.
 Doña Ana County irrigated cropland rent: $195/acre in 2009, $296 in 2026.
 Up 52% nominal. In 2025 dollars, $293 → $288 — **down 2%.** Flat.
 
-Whatever is happening to New Mexico chile, land cost isn't it.
+Rent on the chile valley's best irrigated ground has gone nowhere in real
+terms since 2009. If something is squeezing New Mexico chile, USDA's rent
+figures don't show it here.
+
+**Why this wording (spec §10.7).** Doña Ana's irrigated rent is a county
+average over ground dominated by pecans, alfalfa and cotton, and the county's
+chile acreage is withheld `(D)` for 2024–2025, so the figure cannot be paired
+with chile. It is the setting — expensive irrigated ground in the county that
+anchors New Mexico chile — not chile's cost of production. Do not write that
+land cost is or isn't what's happening to chile.
+
+**Why Doña Ana.** The comparison is the premium end of the rent scale
+(irrigated cropland in the chile valley) against the cheap end (pastureland in
+Iron County). Doña Ana was New Mexico's highest irrigated county rent in 13 of
+the 16 published years; Luna led in 2020 and 2024, San Juan in 2023. It also
+contains the Mesilla valley and Hatch, where the grower interview lands.
 
 ### 2. Earn the claim
 
