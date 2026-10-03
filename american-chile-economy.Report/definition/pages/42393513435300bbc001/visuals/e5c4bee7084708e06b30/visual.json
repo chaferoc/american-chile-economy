@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
   "name": "e5c4bee7084708e06b30",
   "position": {
-    "x": 10.675138999205718,
-    "y": 10,
+    "x": 40,
+    "y": 116,
     "z": 0,
-    "height": 280.60365369340747,
-    "width": 869.26131850675131,
+    "height": 420,
+    "width": 580,
     "tabOrder": 0
   },
   "visual": {
@@ -80,7 +80,47 @@
                   "Value": "'Categorical'"
                 }
               }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "8D"
+                }
+              }
             }
+          }
+        }
+      ],
+      "valueAxis": [
+        {
+          "properties": {
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "8D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "dataPoint": [
+        {
+          "properties": {
+            "fill": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#A6261C'"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "_Measures.Avg County Rent per Acre"
           }
         }
       ],
@@ -91,6 +131,13 @@
               "expr": {
                 "Literal": {
                   "Value": "'linear'"
+                }
+              }
+            },
+            "strokeWidth": {
+              "expr": {
+                "Literal": {
+                  "Value": "3D"
                 }
               }
             }
@@ -105,7 +152,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Iron County, Missouri: pastureland rent per acre'"
+                  "Value": "'Rent per acre, by year'"
                 }
               }
             }
@@ -115,6 +162,13 @@
       "subTitle": [
         {
           "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
             "text": {
               "expr": {
                 "Literal": {
@@ -126,6 +180,26 @@
               "expr": {
                 "Literal": {
                   "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "padding": [
+        {
+          "properties": {
+            "left": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "right": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
                 }
               }
             }

@@ -2,12 +2,9 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
   "name": "90a2715cea1e4c9d4864",
   "displayName": "Your County",
-  "displayOption": "FitToWidth",
-  "height": 1080,
-  "width": 1920,
-  "filterConfig": {
-    "filterSortOrder": "Custom"
-  },
+  "displayOption": "FitToPage",
+  "height": 828,
+  "width": 1280,
   "objects": {
     "outspacePane": [
       {

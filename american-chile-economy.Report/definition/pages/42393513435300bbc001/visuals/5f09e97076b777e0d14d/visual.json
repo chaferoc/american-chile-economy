@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
   "name": "5f09e97076b777e0d14d",
   "position": {
-    "x": 10.675138999205718,
-    "y": 301,
+    "x": 40,
+    "y": 552,
     "z": 6000,
-    "height": 64.050833995234314,
-    "width": 869.26131850675131,
+    "height": 60,
+    "width": 580,
     "tabOrder": 6000
   },
   "visual": {
@@ -21,7 +21,8 @@
                   {
                     "value": "No county estimate for Iron County in 2008 (first year of the program, before Iron was covered).",
                     "textStyle": {
-                      "fontSize": "14pt"
+                      "fontFamily": "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif",
+                      "fontSize": "10pt"
                     }
                   }
                 ]
@@ -31,7 +32,8 @@
                   {
                     "value": "No county-level survey conducted nationwide in 2015 or 2018.",
                     "textStyle": {
-                      "fontSize": "14pt"
+                      "fontFamily": "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif",
+                      "fontSize": "10pt"
                     }
                   }
                 ]

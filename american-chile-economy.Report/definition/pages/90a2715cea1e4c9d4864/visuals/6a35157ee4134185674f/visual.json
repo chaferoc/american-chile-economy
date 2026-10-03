@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
   "name": "6a35157ee4134185674f",
   "position": {
-    "x": 10.675138999205718,
-    "y": 291.27879269261319,
+    "x": 40,
+    "y": 568,
     "z": 1000,
-    "height": 64.050833995234314,
-    "width": 869.26131850675131,
+    "height": 60,
+    "width": 580,
     "tabOrder": 1000
   },
   "visual": {
@@ -19,7 +19,11 @@
               {
                 "textRuns": [
                   {
-                    "value": "No county-level survey was conducted nationwide in 2015 or 2018. Any other blank year means NASS published no estimate for this county that year."
+                    "value": "No county-level survey was conducted nationwide in 2015 or 2018. Any other blank year means NASS published no estimate for this county that year.",
+                    "textStyle": {
+                      "fontFamily": "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif",
+                      "fontSize": "10pt"
+                    }
                   }
                 ]
               }

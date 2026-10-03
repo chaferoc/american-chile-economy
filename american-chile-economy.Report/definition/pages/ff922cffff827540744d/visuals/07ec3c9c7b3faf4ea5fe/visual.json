@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
   "name": "07ec3c9c7b3faf4ea5fe",
   "position": {
-    "x": 11,
-    "y": 574,
+    "x": 660,
+    "y": 446,
     "z": 3,
-    "height": 265,
-    "width": 870,
+    "height": 120,
+    "width": 580,
     "tabOrder": 3
   },
   "visual": {
@@ -19,7 +19,12 @@
               {
                 "textRuns": [
                   {
-                    "value": "Sources: USDA NASS, Vegetables Annual Summary (annual survey, 2008–2025); Census of Agriculture, 2012, 2017, 2022. Coverage changes: NASS vegetable program reviews, March 2019 (Arizona and Texas removed) and April 2024 (Texas restored, Ohio added)."
+                    "value": "Sources: USDA NASS, Vegetables Annual Summary (annual survey, 2008–2025); Census of Agriculture, 2012, 2017, 2022. Coverage changes: NASS vegetable program reviews, March 2019 (Arizona and Texas removed) and April 2024 (Texas restored, Ohio added).",
+                    "textStyle": {
+                      "fontFamily": "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif",
+                      "fontSize": "9pt",
+                      "color": "#555555"
+                    }
                   }
                 ]
               }

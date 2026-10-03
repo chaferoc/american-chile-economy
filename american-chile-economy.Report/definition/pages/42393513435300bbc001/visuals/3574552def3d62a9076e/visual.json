@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
   "name": "3574552def3d62a9076e",
   "position": {
-    "x": 917,
-    "y": 614,
+    "x": 660,
+    "y": 692,
     "z": 7001,
-    "height": 100,
-    "width": 990,
+    "height": 96,
+    "width": 580,
     "tabOrder": 7001
   },
   "visual": {
@@ -19,10 +19,14 @@
               {
                 "textRuns": [
                   {
-                    "value": "CV = coefficient of variation, a precision measure NASS began publishing in 2021. Higher means less certain. Confidence: High under 10% CV, Moderate 10–20%, Low over 20%. Rank is among the state's counties publishing a pastureland estimate that year; ties share a rank."
+                    "value": "CV = coefficient of variation, a precision measure NASS began publishing in 2021. Higher means less certain. Confidence: High under 10% CV, Moderate 10–20%, Low over 20%. Rank is among the state's counties publishing a pastureland estimate that year; ties share a rank.",
+                    "textStyle": {
+                      "fontFamily": "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif",
+                      "fontSize": "9pt",
+                      "color": "#555555"
+                    }
                   }
-                ],
-                "indent": 1
+                ]
               }
             ]
           }
