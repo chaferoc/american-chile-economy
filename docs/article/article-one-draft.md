@@ -1,4 +1,5 @@
 # The Form That Sets the Rent
+ 
 **DRAFT v4 — 2026-09-28. Written for Heat & Harvest; Offrange pitch optional. Source approved his quotes 2026-09-28. Private: keep out of the public repo until published.**
  
 - Byline: Aaron Harris (no editor credit unless someone edits it)
