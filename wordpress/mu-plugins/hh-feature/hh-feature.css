@@ -1,0 +1,325 @@
+/* =========================================================================
+   H&H Feature Layout
+   Loaded only on posts in the Featured category (body.hh-feature).
+   Selectors under .cm-* are ColorMag's markup; if the theme changes, this
+   is the one file to update.
+
+   Page geometry, modeled on a US Letter magazine page (8.5 x 11 in):
+     Page    1000px  = 8.5 in trim
+     Text     840px  = 7 in live area, ~0.7 in margins   (--hh-text)
+                       Text, headings and tables all share this column.
+     Bleed   1000px  = to the page edge, for photos       (.hh-bleed)
+     Spread  up to two pages, capped to the screen,       (.hh-spread)
+             for two-page graphics such as the Power BI report (1280 x 828,
+             two Letter portraits). The report wrapper gets this
+             automatically; any other block can opt in with the class.
+   Classes go in the block's Advanced > Additional CSS class(es) field.
+   ========================================================================= */
+
+body.hh-feature {
+  --hh-desk:   #d6d4cf;  /* the desk behind the page */
+  --hh-paper:  #ffffff;
+  --hh-ink:    #222222;
+  --hh-rule:   #b5321e;  /* quote rule */
+  --hh-sheet:  1000px;   /* page width on desktop */
+  --hh-pad-x:  40px;     /* page side margins */
+  --hh-pad-y:  56px;
+  --hh-text:   840px;    /* live area: 80px margins on the 1000px page */
+  /* Two pages wide at most; never wider than the screen, and never taller
+     than the screen once the 36px Power BI footer is added. 1.54589 is
+     1280 / 828. */
+  --hh-spread: min(2000px, 100vw - 64px, (100vh - 132px) * 1.54589);
+  --hh-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.06),
+    0 6px 18px rgba(0, 0, 0, 0.10),
+    0 24px 48px -24px rgba(0, 0, 0, 0.18);
+}
+
+/* ---- Desk and sheet --------------------------------------------------- */
+
+body.hh-feature #cm-content {
+  background: var(--hh-desk);
+  padding: 48px 0 80px;
+}
+body.hh-feature article.post {
+  max-width: var(--hh-sheet);
+  margin: 0 auto;
+  overflow: visible;      /* theme sets hidden, which would clip spreads */
+  border-radius: 0;
+  background: var(--hh-paper);
+  box-shadow: var(--hh-shadow);
+}
+body.hh-feature .cm-post-content {
+  padding: var(--hh-pad-y) var(--hh-pad-x) 72px;
+}
+
+/* Featured image bleeds to the page edges, like a magazine opener */
+body.hh-feature .cm-featured-image {
+  margin: calc(-1 * var(--hh-pad-y)) calc(-1 * var(--hh-pad-x)) 40px;
+}
+body.hh-feature .cm-featured-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Previous/next links line up with the page edges */
+body.hh-feature #cm-primary > ul.default-wp-page {
+  max-width: var(--hh-sheet);
+  margin: 28px auto 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Comments, if open, sit on their own sheet below the article */
+body.hh-feature #comments {
+  max-width: var(--hh-sheet);
+  margin: 28px auto 0;
+  padding: 40px var(--hh-pad-x);
+  background: var(--hh-paper);
+  box-shadow: var(--hh-shadow);
+  box-sizing: border-box;
+}
+
+/* ---- Reading column --------------------------------------------------- */
+/* Text, headings and tables share the 840px live area */
+
+body.hh-feature .cm-entry-header-meta,
+body.hh-feature .cm-entry-header,
+body.hh-feature .cm-below-entry-meta,
+body.hh-feature .cm-entry-summary > * {
+  max-width: var(--hh-text);
+  margin-left: auto;
+  margin-right: auto;
+}
+body.hh-feature .cm-entry-summary > div { max-width: none; }
+
+/* Headings stay in the same centered column as the text */
+body.hh-feature .cm-entry-summary h2,
+body.hh-feature .cm-entry-summary h3 {
+  max-width: var(--hh-text);
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+body.hh-feature .cm-entry-summary h2 { margin-top: 48px; }
+body.hh-feature .cm-entry-summary h3 { margin-top: 36px; }
+
+/* ---- Bleed: runs to the page edges ----------------------------------- */
+
+body.hh-feature .cm-entry-summary > .hh-bleed {
+  max-width: none;
+  margin-left: calc(-1 * var(--hh-pad-x));
+  margin-right: calc(-1 * var(--hh-pad-x));
+}
+body.hh-feature .cm-entry-summary > .hh-bleed img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+body.hh-feature .cm-entry-summary > .hh-bleed figcaption {
+  padding: 0 var(--hh-pad-x);
+}
+
+/* ---- Spread: opens across two pages, onto the desk --------------------- */
+
+body.hh-feature .cm-entry-summary > div:has(> iframe[src*="powerbi"]),
+body.hh-feature .cm-entry-summary > .hh-spread {
+  width: var(--hh-spread);
+  max-width: none;
+  margin-left: calc((100% - var(--hh-spread)) / 2);
+  margin-right: 0;
+  margin-top: 40px;
+  margin-bottom: 16px;
+  background: var(--hh-paper);
+  box-shadow: var(--hh-shadow);
+}
+/* The embed's inline style sets width:100% and a padding-top that's a
+   percentage of the page column, so override both (inline beats the
+   stylesheet without !important) and size the height from the spread. */
+body.hh-feature .cm-entry-summary > div:has(> iframe[src*="powerbi"]) {
+  width: var(--hh-spread) !important;
+  padding-top: 0 !important;
+  height: calc(var(--hh-spread) / 1.54589 + 36px);
+}
+body.hh-feature .cm-entry-summary > .hh-spread img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ---- Body text -------------------------------------------------------- */
+
+body.hh-feature .cm-entry-summary p,
+body.hh-feature .cm-entry-summary li {
+  font-size: 19px;
+  line-height: 1.68;
+}
+
+/* Subtitle (first paragraph): larger, upright, balanced lines */
+body.hh-feature .cm-entry-summary > p:first-child {
+  font-size: 24px;
+  line-height: 1.45;
+  color: #4a4a4a;
+  text-wrap: balance;
+}
+body.hh-feature .cm-entry-summary > p:first-child em { font-style: normal; }
+
+/* Divider under the subtitle: full column width, hairline */
+body.hh-feature .cm-entry-summary > hr.wp-block-separator {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid #ddd;
+  margin-top: 24px;
+  margin-bottom: 32px;
+}
+
+/* ---- Quotes: left rule instead of the theme's blue box ----------------- */
+
+body.hh-feature .cm-entry-summary blockquote,
+body.hh-feature .cm-entry-summary blockquote.wp-block-quote {
+  background: none !important;
+  color: var(--hh-ink) !important;
+  border: 0 !important;
+  border-left: 4px solid var(--hh-rule) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 2px 0 2px 24px !important;
+  margin-top: 32px !important;
+  margin-bottom: 32px !important;
+}
+body.hh-feature .cm-entry-summary blockquote::before,
+body.hh-feature .cm-entry-summary blockquote::after,
+body.hh-feature .cm-entry-summary blockquote *::before,
+body.hh-feature .cm-entry-summary blockquote *::after {
+  content: none !important;
+  display: none !important;
+}
+body.hh-feature .cm-entry-summary blockquote svg,
+body.hh-feature .cm-entry-summary blockquote i { display: none !important; }
+body.hh-feature .cm-entry-summary blockquote p {
+  font-size: 21px !important;
+  line-height: 1.55 !important;
+  color: var(--hh-ink) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* ---- Tables: no forced scrollbar, labels left, figures right ----------- */
+
+body.hh-feature .cm-entry-summary figure.wp-block-table {
+  overflow-x: auto !important;
+  margin-top: 28px;
+  margin-bottom: 28px;
+}
+body.hh-feature .cm-entry-summary .wp-block-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  margin: 0;
+}
+body.hh-feature .cm-entry-summary .wp-block-table thead { border-bottom: 0; }
+body.hh-feature .cm-entry-summary .wp-block-table th {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 14px;
+  font-weight: 600;
+  background: none;
+  text-align: right;
+  vertical-align: bottom;
+  padding: 8px 12px;
+  border: 0;
+  border-bottom: 2px solid var(--hh-ink);
+}
+body.hh-feature .cm-entry-summary .wp-block-table td {
+  text-align: right;
+  padding: 8px 12px;
+  border: 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+body.hh-feature .cm-entry-summary .wp-block-table th:first-child,
+body.hh-feature .cm-entry-summary .wp-block-table td:first-child { text-align: left; }
+
+/* ---- Phones and small tablets: drop the desk, page goes edge to edge --- */
+
+@media (max-width: 768px) {
+  body.hh-feature {
+    --hh-pad-x: 16px;
+    --hh-pad-y: 20px;
+  }
+  body.hh-feature #cm-content { padding: 0; }
+  body.hh-feature article.post { box-shadow: none; }
+  body.hh-feature .cm-post-content { padding-bottom: 40px; }
+  body.hh-feature .cm-featured-image { margin-bottom: 24px; }
+  body.hh-feature .cm-entry-summary > p:first-child { font-size: 20px; }
+  body.hh-feature .cm-entry-summary blockquote p { font-size: 18px !important; }
+  body.hh-feature #comments { margin-top: 0; box-shadow: none; }
+  body.hh-feature #cm-primary > ul.default-wp-page { padding: 0 var(--hh-pad-x); }
+  body.hh-feature { --hh-spread: 100vw; }
+  body.hh-feature .cm-entry-summary > div:has(> iframe[src*="powerbi"]),
+  body.hh-feature .cm-entry-summary > .hh-spread { box-shadow: none; }
+}
+
+/* ---- Print: Letter pages, article only -------------------------------- */
+
+@media print {
+  @page { size: letter; margin: 0.75in 0.75in 0.85in; }
+
+  /* Hide site chrome; keep only the article */
+  body.hh-feature #wpadminbar,
+  body.hh-feature .hfeed > :not(#cm-content),
+  body.hh-feature #cm-primary > :not(.cm-posts),
+  body.hh-feature .cm-secondary,
+  body.hh-feature #comments,
+  body.hh-feature .cm-entry-header-meta {
+    display: none !important;
+  }
+  html { margin-top: 0 !important; }
+
+  body.hh-feature,
+  body.hh-feature #cm-content { background: #fff !important; padding: 0 !important; }
+  body.hh-feature article.post {
+    max-width: none;
+    box-shadow: none !important;
+  }
+  body.hh-feature .cm-post-content { padding: 0; }
+  body.hh-feature .cm-featured-image { margin: 0 0 18pt; }
+
+  body.hh-feature .cm-entry-header-meta,
+  body.hh-feature .cm-entry-header,
+  body.hh-feature .cm-below-entry-meta,
+  body.hh-feature .cm-entry-summary > *,
+  body.hh-feature .cm-entry-summary h2,
+  body.hh-feature .cm-entry-summary h3 { max-width: none; }
+
+  body.hh-feature .cm-entry-summary p,
+  body.hh-feature .cm-entry-summary li { font-size: 11pt; line-height: 1.5; }
+  body.hh-feature .cm-entry-summary > p:first-child { font-size: 14pt; }
+  body.hh-feature .cm-entry-summary blockquote p { font-size: 12.5pt !important; }
+  body.hh-feature .cm-entry-summary .wp-block-table table { font-size: 9.5pt; }
+  body.hh-feature .cm-entry-summary h2 { margin-top: 24pt; }
+
+  /* Bleed and spread fall back to the printable area (browsers can't print
+     true bleed; that's the print-edition PDF's job) */
+  body.hh-feature .cm-entry-summary > .hh-bleed,
+  body.hh-feature .cm-entry-summary > .hh-spread {
+    width: auto;
+    margin-left: 0;
+    margin-right: 0;
+    box-shadow: none;
+  }
+  body.hh-feature .cm-entry-summary > .hh-bleed figcaption { padding: 0; }
+
+  /* The interactive report can't print; the full-screen link stays */
+  body.hh-feature .cm-entry-summary > div:has(iframe) { display: none !important; }
+
+  /* Keep things whole across page breaks */
+  body.hh-feature figure,
+  body.hh-feature table,
+  body.hh-feature blockquote,
+  body.hh-feature img { break-inside: avoid; }
+  body.hh-feature h2,
+  body.hh-feature h3 { break-after: avoid; }
+  body.hh-feature p { orphans: 3; widows: 3; }
+  body.hh-feature .cm-entry-summary figure.wp-block-table { overflow: visible !important; }
+}
