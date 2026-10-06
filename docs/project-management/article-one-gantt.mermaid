@@ -1,43 +1,34 @@
 gantt
-    title Article one to publication
+    title Article one to publication (as of Oct 6)
     dateFormat YYYY-MM-DD
     axisFormat %b %d
 
     section Session start
-    Commit plugin to repo (A1)        :a1, 2026-10-05, 1d
-    Invite header check (A2)          :a2, 2026-10-05, 1d
-    Fix site mail if needed (A3)      :a3, after a2, 1d
-    Andy follow-up (A4)               :a4, 2026-10-05, 1d
+    Recheck public link (H1)          :h1, 2026-10-06, 1d
+    Phone pass (H2)                   :h2, after h1, 1d
+    Print check (H3)                  :h3, after h1, 1d
+    Spreads or single charts (H4)     :milestone, h4, 2026-10-08, 0d
 
     section Outreach
     NASS reply window (B2)            :crit, b2, 2026-10-05, 2026-10-17
+    Kim approvals (C3)                :c3, 2026-10-05, 2026-10-10
     Grower replies (B3)               :b3, 2026-10-05, 2026-10-12
     Direct-grower fallback            :b3b, 2026-10-12, 2026-10-16
     Grower slot decision (B4)         :milestone, b4, 2026-10-16, 0d
 
     section Editorial
-    Confirm Emmy timeline (C1)        :c1, 2026-10-05, 1d
-    Emmy rewrite (C2)                 :crit, c2, 2026-10-06, 2026-10-15
-    Kim approvals (C3)                :c3, 2026-10-05, 2026-10-10
-    Verify embed page (C6)            :c6, 2026-10-05, 1d
-    Program reviews and dates (C4 C5) :c4, 2026-10-07, 1d
-    Chart slot (C7)                   :c7, 2026-10-08, 2d
-    Compile source URLs (C8)          :c8, 2026-10-07, 2d
-    Insert URLs after Emmy (C8)       :c8b, after c2, 1d
+    Aaron voice pass (C2)             :crit, c2, 2026-10-06, 2026-10-15
+    Insert source URLs (C8)           :c8, after c2, 1d
     Fill slots (C9)                   :crit, c9, 2026-10-16, 2026-10-17
 
     section Photos
-    Captions (D1)                     :d1, 2026-10-06, 1d
     Sorrentino direct license (D2)    :d2, 2026-10-05, 2026-10-12
     Buy and swap licensed files (D3)  :d3, 2026-10-13, 2d
 
-    section Layout
-    Phone pass (E1)                   :e1, 2026-10-06, 1d
-    Print check (E2)                  :e2, 2026-10-06, 1d
-
     section Pitch and publish
-    Send Offrange pitch (F2)          :milestone, f2, 2026-10-06, 0d
-    One-week wait (F3)                :f3, 2026-10-06, 2026-10-13
+    Check Offrange AI policy (F1)     :f1, 2026-10-06, 2d
+    Send Offrange pitch (F2)          :milestone, f2, 2026-10-09, 0d
+    One-week wait (F3)                :f3, 2026-10-09, 2026-10-16
     Final QA (F4)                     :crit, f4, 2026-10-17, 1d
     Publish (F5)                      :crit, milestone, f5, 2026-10-17, 0d
 
