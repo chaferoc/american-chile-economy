@@ -4603,6 +4603,16 @@ cultureInfo en-US
 			            },
 			            "Weight": 0.9
 			          }
+			        },
+			        {
+			          "Nominal": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -4718,6 +4728,16 @@ cultureInfo en-US
 			              "Agent": "Thesaurus"
 			            },
 			            "Weight": 0.479
+			          }
+			        },
+			        {
+			          "In 2025 dollars": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
 			          }
 			        }
 			      ]
@@ -9078,110 +9098,6 @@ cultureInfo en-US
 			    }
 			  },
 			  "Relationships": {
-			    "dim_geography_has_dim_state": {
-			      "Binding": {
-			        "ConceptualEntity": "dim_geography"
-			      },
-			      "State": "Generated",
-			      "Roles": {
-			        "dim_geography": {
-			          "Target": {
-			            "Entity": "dim_geography"
-			          }
-			        },
-			        "dim_state": {
-			          "Target": {
-			            "Entity": "dim_state"
-			          },
-			          "Nouns": [
-			            {
-			              "state ansi": {
-			                "State": "Generated"
-			              }
-			            },
-			            {
-			              "ansi": {
-			                "State": "Generated"
-			              }
-			            }
-			          ]
-			        }
-			      },
-			      "Phrasings": [
-			        {
-			          "Attribute": {
-			            "Subject": {
-			              "Role": "dim_geography"
-			            },
-			            "Object": {
-			              "Role": "dim_state"
-			            }
-			          },
-			          "State": "Generated",
-			          "Weight": 0.99,
-			          "ID": "dim_geographies_have_dim_states"
-			        },
-			        {
-			          "Attribute": {
-			            "Subject": {
-			              "Role": "dim_state"
-			            },
-			            "Object": {
-			              "Role": "dim_geography"
-			            }
-			          },
-			          "State": "Generated",
-			          "Weight": 0.99,
-			          "ID": "dim_states_have_dim_geographies"
-			        }
-			      ]
-			    },
-			    "fact_cash_rent_residual_has_dim_land_category": {
-			      "Binding": {
-			        "ConceptualEntity": "fact_cash_rent_residual"
-			      },
-			      "State": "Generated",
-			      "Roles": {
-			        "fact_cash_rent_residual": {
-			          "Target": {
-			            "Entity": "fact_cash_rent_residual"
-			          }
-			        },
-			        "dim_land_category": {
-			          "Target": {
-			            "Entity": "dim_land_category"
-			          }
-			        }
-			      },
-			      "Phrasings": [
-			        {
-			          "Attribute": {
-			            "Subject": {
-			              "Role": "fact_cash_rent_residual"
-			            },
-			            "Object": {
-			              "Role": "dim_land_category"
-			            }
-			          },
-			          "State": "Generated",
-			          "Weight": 0.99,
-			          "ID": "fact_cash_rent_residuals_have_dim_land_categories"
-			        },
-			        {
-			          "Attribute": {
-			            "Subject": {
-			              "Role": "dim_land_category"
-			            },
-			            "Object": {
-			              "Role": "fact_cash_rent_residual"
-			            }
-			          },
-			          "State": "Generated",
-			          "Weight": 0.99,
-			          "ID": "dim_land_categories_have_fact_cash_rent_residuals"
-			        }
-			      ]
-			    },
 			    "fact_cash_rent_residual_has_dim_year": {
 			      "Binding": {
 			        "ConceptualEntity": "fact_cash_rent_residual"
@@ -11336,6 +11252,26 @@ cultureInfo en-US
 			          "State": "Generated",
 			          "Weight": 0.99,
 			          "ID": "fact_cash_rents_have_avg_county_rent_per_acre"
+			        },
+			        {
+			          "Adjective": {
+			            "Subject": {
+			              "Role": "fact_cash_rent"
+			            },
+			            "Adjectives": [
+			              {
+			                "Nominal": {
+			                  "State": "Generated"
+			                }
+			              }
+			            ],
+			            "Measurement": {
+			              "Role": "entity__measure.avg_county_rent_per_acre"
+			            }
+			          },
+			          "State": "Generated",
+			          "Weight": 0.99,
+			          "ID": "avg_county_rent_per_acre_indicates_how_Nominal_fact_cash_rents_are"
 			        }
 			      ]
 			    },
@@ -11369,6 +11305,26 @@ cultureInfo en-US
 			          "State": "Generated",
 			          "Weight": 0.99,
 			          "ID": "dim_land_categories_have_avg_county_rent_per_acre"
+			        },
+			        {
+			          "Adjective": {
+			            "Subject": {
+			              "Role": "dim_land_category"
+			            },
+			            "Adjectives": [
+			              {
+			                "Nominal": {
+			                  "State": "Generated"
+			                }
+			              }
+			            ],
+			            "Measurement": {
+			              "Role": "entity__measure.avg_county_rent_per_acre"
+			            }
+			          },
+			          "State": "Generated",
+			          "Weight": 0.99,
+			          "ID": "avg_county_rent_per_acre_indicates_how_Nominal_dim_land_categories_are"
 			        }
 			      ]
 			    },
@@ -13032,6 +12988,110 @@ cultureInfo en-US
 			          "State": "Generated",
 			          "Weight": 0.99,
 			          "ID": "some_dim_years_are_cv_published_dim_years"
+			        }
+			      ]
+			    },
+			    "fact_cash_rent_residual_has_dim_land_category": {
+			      "Binding": {
+			        "ConceptualEntity": "fact_cash_rent_residual"
+			      },
+			      "State": "Generated",
+			      "Roles": {
+			        "fact_cash_rent_residual": {
+			          "Target": {
+			            "Entity": "fact_cash_rent_residual"
+			          }
+			        },
+			        "dim_land_category": {
+			          "Target": {
+			            "Entity": "dim_land_category"
+			          }
+			        }
+			      },
+			      "Phrasings": [
+			        {
+			          "Attribute": {
+			            "Subject": {
+			              "Role": "fact_cash_rent_residual"
+			            },
+			            "Object": {
+			              "Role": "dim_land_category"
+			            }
+			          },
+			          "State": "Generated",
+			          "Weight": 0.99,
+			          "ID": "fact_cash_rent_residuals_have_dim_land_categories"
+			        },
+			        {
+			          "Attribute": {
+			            "Subject": {
+			              "Role": "dim_land_category"
+			            },
+			            "Object": {
+			              "Role": "fact_cash_rent_residual"
+			            }
+			          },
+			          "State": "Generated",
+			          "Weight": 0.99,
+			          "ID": "dim_land_categories_have_fact_cash_rent_residuals"
+			        }
+			      ]
+			    },
+			    "dim_geography_has_dim_state": {
+			      "Binding": {
+			        "ConceptualEntity": "dim_geography"
+			      },
+			      "State": "Generated",
+			      "Roles": {
+			        "dim_geography": {
+			          "Target": {
+			            "Entity": "dim_geography"
+			          }
+			        },
+			        "dim_state": {
+			          "Target": {
+			            "Entity": "dim_state"
+			          },
+			          "Nouns": [
+			            {
+			              "state ansi": {
+			                "State": "Generated"
+			              }
+			            },
+			            {
+			              "ansi": {
+			                "State": "Generated"
+			              }
+			            }
+			          ]
+			        }
+			      },
+			      "Phrasings": [
+			        {
+			          "Attribute": {
+			            "Subject": {
+			              "Role": "dim_geography"
+			            },
+			            "Object": {
+			              "Role": "dim_state"
+			            }
+			          },
+			          "State": "Generated",
+			          "Weight": 0.99,
+			          "ID": "dim_geographies_have_dim_states"
+			        },
+			        {
+			          "Attribute": {
+			            "Subject": {
+			              "Role": "dim_state"
+			            },
+			            "Object": {
+			              "Role": "dim_geography"
+			            }
+			          },
+			          "State": "Generated",
+			          "Weight": 0.99,
+			          "ID": "dim_states_have_dim_geographies"
 			        }
 			      ]
 			    },

@@ -323,6 +323,40 @@ table _Measures
 			)
 		lineageTag: a1c9d3bb-91f6-4e51-959b-251c0dd75185
 
+	measure 'Rent Range Low' =
+			
+			IF (
+			    COUNTROWS ( fact_cash_rent ) = 1,
+			    VAR _rent = SELECTEDVALUE ( fact_cash_rent[rent_usd_per_acre] )
+			    VAR _cv = SELECTEDVALUE ( fact_cash_rent[cv_pct] )
+			    RETURN
+			        IF (
+			            NOT ISBLANK ( _cv ),
+			            _rent * ( 1 - 1.96 * _cv / 100 )
+			        )
+			)
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 88fb6aa4-fac2-4a1e-9d3a-94b074bbd9a7
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
+	measure 'Rent Range High' =
+			
+			IF (
+			    COUNTROWS ( fact_cash_rent ) = 1,
+			    VAR _rent = SELECTEDVALUE ( fact_cash_rent[rent_usd_per_acre] )
+			    VAR _cv = SELECTEDVALUE ( fact_cash_rent[cv_pct] )
+			    RETURN
+			        IF (
+			            NOT ISBLANK ( _cv ),
+			            _rent * ( 1 + 1.96 * _cv / 100 )
+			        )
+			)
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 9aeacb8f-4151-4d48-8e3f-315609ef963e
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-US"}
+
 	column Column1
 		dataType: string
 		isHidden
