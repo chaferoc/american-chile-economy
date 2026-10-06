@@ -1,14 +1,15 @@
 # USDA NASS County Cash Rents — Data Model Specification
 
-**Version:** 0.5.7
+**Version:** 0.5.8
 **Status:** Three facts built and validated — county cash rents, state chile, and
-chile Census of Agriculture. Twenty measures written and validated: fifteen on
-the cash rents star, five on the chile facts (§10.8). Report layer: all three
-published pages are built — Chile Coverage, Iron County, Your County (§11);
-published to web 2026-10-02 and embedded in a WordPress draft (§11.4);
-spread layout and theme applied (§11.7). `chk_row_counts` at 35 assertions, all passing.
+chile Census of Agriculture. Twenty-two measures written and validated:
+seventeen on the cash rents star, five on the chile facts (§10.8). Report layer:
+Chile Coverage, Iron County, Your County and a Doña Ana chart page are built
+(§11). Since 2026-10-05 only Your County is published to web; the other three
+reach the article as static images exported from the report (§11.8). Embedded
+in a WordPress draft (§11.4); spread layout and theme applied (§11.7). `chk_row_counts` at 35 assertions, all passing.
 §10.6 and §10.7 resolved.
-**Last updated:** 2026-10-02
+**Last updated:** 2026-10-05
 **Owner:** Aaron / Heat & Harvest Data Desk
 **Repo:** `github.com/chaferoc/american-chile-economy`, at
 `docs/data-model/cash-rents-data-model.md`
@@ -592,11 +593,14 @@ more than one table anyway.
 | `County Rank in State` | County's rank among counties publishing in its state, year and category. `RANKX`, `DESC`, ties `Skip`. Guarded on land category and on a blank county rate. See §8.6. |
 | `Confidence Band` | D4 band for a single estimate: `High` <10, `Moderate` 10–20, `Low` >20 (`cv_pct`). Returns a value only when exactly one fact row is in context, so it never labels an average; blank before 2021. Display measure for D18. Added 2026-09-30. |
 | `Confidence Band Color` | `#F6D7A7` when `Confidence Band` is `Low`, blank otherwise. Drives field-value background formatting; blank applies none. Added 2026-09-30. |
+| `Rent Range Low` | Rough 95% lower bound for a single estimate: `rent_usd_per_acre × (1 − 1.96 × cv_pct / 100)`. Same single-row guard as `Confidence Band`; blank before 2021 and wherever the row carries no CV. Feeds error bars on the Doña Ana chart (§11.8). Added 2026-10-05. |
+| `Rent Range High` | Upper bound, `rent_usd_per_acre × (1 + 1.96 × cv_pct / 100)`, same guards. Added 2026-10-05. |
 | `Counties Reporting in State` | Denominator for the rank. Guarded on land category, unlike `Counties Reporting`, because a rank exists only within a category. Deliberately *not* guarded on a blank county rate: in 2008 Iron County has no estimate and 76 Missouri counties do, and 76 is the honest answer. |
 
-All fifteen measures validated against values computed independently from the
+All seventeen measures validated against values computed independently from the
 extract — the first nine on 2026-09-12, the four peer-context measures on
-2026-09-13, the two confidence-band measures on 2026-09-30. Regression baseline, county fact only:
+2026-09-13, the two confidence-band measures on 2026-09-30, the two range
+measures on 2026-10-05. Regression baseline, county fact only:
 
 | Measure | Scope | Value |
 |---|---|---|
@@ -614,6 +618,8 @@ extract — the first nine on 2026-09-12, the four peer-context measures on
 | `Counties Reporting in State` | MO pastureland, 2008 / 2025 / 2026 | 76 / 106 / 104 |
 | `Avg County Rent per Acre` | Iron MO pastureland, 2021-2026 | 18.5 / 16.0 / 13.5 / 16.5 / 43.5 / 22.0 |
 | `Median CV` | Iron MO pastureland, 2021-2026 | 6.0 / 12.0 / 16.1 / 7.0 / 28.7 / 8.3 |
+| `Rent Range Low` / `Rent Range High` | Doña Ana NM irrigated, 2025 / 2026 | $207.54–$272.46 / $219.42–$372.58 |
+| `Avg County Rent per Acre` / `Avg Real Rent per Acre` | Doña Ana NM irrigated, 2009 / 2012 / 2026 | nominal $195.00 / $272.00 / $296.00; real rounds to $293 / $381 / $288 |
 
 Both CV measures return blank for every year 2008–2020.
 
@@ -1357,6 +1363,14 @@ was recorded only in chat history, and a later session restarted it from step 1.
 | Chile Coverage | Published page 1: survey coverage vs. Census acres | Built (§11.6) |
 | Iron County | Published page 2: the counter-example | Built (§11.3) |
 | Your County | Published page 3: reader lookup by state, county and land category | Built (§11.5) |
+| Dona Ana Chart | Doña Ana irrigated rent, nominal and 2025 dollars, with 2021–2026 ranges | Built 2026-10-05, hidden; exported as a static image (§11.8) |
+
+**Publishing change (2026-10-05).** Chile Coverage and Iron County are now hidden
+too, so Your County is the only published page and the embed opens on it with no
+page navigation. Publish to web has no setting that hides the page arrows on a
+multi-page report; a single visible page is the reliable way. The three hidden
+analysis pages reach the article as static images exported from this report
+(§11.8). The report must now be saved with Your County as the active page.
 
 All three Iron County pages carry hidden page-level filters for Missouri, Iron and
 Pastureland, set on attribute columns because the surrogate keys are hidden from
@@ -1437,7 +1451,9 @@ Access was confirmed disabled; the warning beside the toggle was generic.
 **Embed code.** Public link, also the iframe src:
 `https://app.powerbi.com/view?r=eyJrIjoiMzdmY2NhN2MtMmMxNi00NDg2LTkxYzAtZDRhMTQxYzUyMzI5IiwidCI6IjAwNmM3ZWM0LTY4YTctNGE4YS1hOGJlLTQ1ODA1NmEzOTlkOCJ9`
 Default page left on Default (the page active at save, Chile Coverage); the
-preview showed 1 of 3. Codes are managed under Admin portal → Embed Codes.
+preview showed 1 of 3. Republished with Replace on 2026-10-05 with Your County
+as the only visible page (§11.1); the embed code is unchanged. The iframe now
+carries `loading="lazy"`. Codes are managed under Admin portal → Embed Codes.
 
 **WordPress.** Draft post 223 on heatandharvest.com, "The American Chile Economy
 (draft)", created through the WPVibe connector. The iframe sits in a Custom HTML
@@ -1567,11 +1583,47 @@ folders is now the source; `american-chile-economy.pbix` is kept as the
 pre-layout snapshot. `.gitignore` excludes `**/.pbi/localSettings.json` and
 `**/.pbi/cache.abf`. Republished from the `.pbip` with Replace; the embed code
 was unchanged. The report must be saved with Chile Coverage as the active page.
+(Superseded 2026-10-05: Your County, §11.1.)
+
+---
+
+### 11.8 Doña Ana chart page and static exports — 2026-10-05
+
+**Why.** The article's "A well-measured county" section needed a chart of Doña
+Ana irrigated rent over time. The embed duplicated Chile Coverage once the
+article carried that page as an image, and publish to web cannot lock a
+multi-page report to one page, so the analysis pages moved into the article as
+static images and the embed became the lookup alone.
+
+**Doña Ana Chart page (`8fc6bb88e6579a6e3f80`).** Built by Aaron in Desktop:
+hidden page; page filters on `dim_state[state_name]` NEW MEXICO,
+`dim_geography[county_name]` DONA ANA and `dim_land_category[land_category_label]`
+Irrigated cropland, as on the Iron County pages. Line chart: `dim_year[year]` on a
+categorical axis with Show items with no data (2008, 2015 and 2018 show as gaps);
+`Avg County Rent per Acre` renamed for the visual "Nominal" and `Avg Real Rent per
+Acre` "In 2025 dollars"; linear interpolation; error bars on Nominal from `Rent
+Range Low` / `Rent Range High` (§8.2). Validated against the article: 2009 $195 /
+$293, 2012 real $381, 2026 $296 / $288, 2026 range $219.42–$372.58. Styling
+(1280 × 720 canvas, series colors and widths, legend, axis fonts) was generated
+by Claude Code from `docs/layout/layout-brief-dona-ana.md` under the main brief's
+hard rules and reviewed in Desktop.
+
+**Static exports.** File → Export → Export to PDF from Desktop (visible pages
+only, so the Doña Ana page was unhidden for the export and hidden again). Pages
+were rasterized from the PDF at 200 and 300 dpi and cropped to the page or
+chart; nothing was redrawn. In the WordPress media library: Doña Ana chart
+(267), Iron County page (268) and chart (269), Chile Coverage page (270) and
+chart (271). WordPress scales images wider than 2,560 px, so 267, 268 and 270 are
+served at 2,560 px with the originals kept. In post 223 the Doña Ana chart sits
+in the text column; Iron County and Chile Coverage are full pages in the
+`hh-spread` layout, with the single charts held for a possible swap. Each image
+is credited "Chart: Mark Aaron Harris, H&H Data Desk (Power BI)".
 
 ## 12. Changelog
 
 | Version | Date | Change |
 |---|---|---|
+| 0.5.8 | 2026-10-05 | **Doña Ana chart page; Your County is the only published page.** Two measures added to §8.2, `Rent Range Low` and `Rent Range High` (rough 95% bounds from the CV, single-row guard), validated on Doña Ana irrigated 2025 and 2026; measure count 15 → 17 on the cash rents star. Hidden Dona Ana Chart page built and validated against the article's figures, styled by Claude Code from `docs/layout/layout-brief-dona-ana.md` (§11.8). Chile Coverage and Iron County hidden and republished with Replace, so the embed opens on Your County with no page navigation; the three analysis pages reach the article as static images exported from the report (§11.1, §11.4, §11.8). Active page at save is now Your County. |
 | 0.5.7 | 2026-10-02 | **Spread layout and theme (AI-generated).** Report saved as `.pbip`; Claude Code applied a 1280 × 828 spread layout, headlines and deks, and the H&H Editorial theme from `docs/layout/layout-brief.md` in two rounds; matrix two-line year headers accepted; WordPress wrapper ratio updated (§11.7, §11.4). No model changes. |
 | 0.5.6 | 2026-10-02 | **Published to web; embedded in WordPress draft.** Iron County line chart titled and subtitled as the counter-example (§11.3). Filters pane hidden for readers; Alaska excluded from the Your County State slicer (§11.5). Admin takeover of the heatandharvest.com Microsoft directory and new embed codes enabled; embed URL recorded; WordPress draft post 223 with a responsive wrapper, no-sidebar layout and a full-screen link (§11.4). No model changes. |
 | 0.5.5 | 2026-10-01 | **Publishing begun; §10.7 resolved by framing.** Non-published pages hidden; published order Chile Coverage, Iron County, Your County, per `docs/editorial-direction.md` (§11.1). Your County: Pastureland page filter replaced by a single-select Land category slicer, validated on New Mexico / Doña Ana / Irrigated cropland for 2009, 2021, 2025 and 2026, footnote made category-neutral (§11.5). §10.7: the section-one lead no longer claims land cost is not what is happening to chile; Doña Ana kept as the setting, highest NM irrigated rent in 13 of 16 years. §11.4 becomes the publishing checklist. No model changes. |
