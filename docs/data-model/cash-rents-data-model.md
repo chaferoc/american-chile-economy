@@ -1,6 +1,6 @@
 # USDA NASS County Cash Rents — Data Model Specification
 
-**Version:** 0.5.8
+**Version:** 0.5.9
 **Status:** Three facts built and validated — county cash rents, state chile, and
 chile Census of Agriculture. Twenty-two measures written and validated:
 seventeen on the cash rents star, five on the chile facts (§10.8). Report layer:
@@ -9,7 +9,7 @@ Chile Coverage, Iron County, Your County and a Doña Ana chart page are built
 reach the article as static images exported from the report (§11.8). Embedded
 in a WordPress draft (§11.4); spread layout and theme applied (§11.7). `chk_row_counts` at 35 assertions, all passing.
 §10.6 and §10.7 resolved.
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-06
 **Owner:** Aaron / Heat & Harvest Data Desk
 **Repo:** `github.com/chaferoc/american-chile-economy`, at
 `docs/data-model/cash-rents-data-model.md`
@@ -24,8 +24,8 @@ It is the authoritative record of grain, keys, naming, and modeling decisions,
 and is written to be quotable in the article's methodology section.
 
 Scope of this version: the county cash rents fact and its dimensions (§3–§8),
-and the NASS state-level chile fact (§9). The ERS national chile series is
-profiled but not ingested; see §9.9.
+the three chile facts (§9), and the report layer (§11). The ERS national chile
+series is profiled but not ingested; see §9.9.
 
 ---
 
@@ -246,7 +246,7 @@ published.
 | `fact_cash_rent` | `County ANSI` is present | 79,064 |
 | `fact_cash_rent_residual` | `County` is one of the two rollup labels | 6,349 |
 | `dim_geography` | `County ANSI` present, then `Table.Distinct` | 2,938 |
-| `dim_state` | no filter — Rhode Island exists only as a residual row (§3.15) | 49 |
+| `dim_state` | no filter — Rhode Island exists only as a residual row (§3.15); Alaska appended as a literal (D17, §6.4) | 49 + 1 = 50 |
 
 `dim_year` and `dim_land_category` are authored, not derived (§6.5, §6.6).
 
@@ -282,12 +282,13 @@ above and each was chosen so a source change fails loudly:
    unrecognized rollup label lands in neither stream and the reconciliation
    below stops balancing.
 
-**Load-validation targets.** Implemented as the `chk_row_counts` query, 28
+**Load-validation targets.** Implemented as the `chk_row_counts` query, 35
 assertions covering row counts, both fact/residual reconciliations, CV
-population, referential integrity on all nine foreign keys, `dim_geography`
-and `fact_chile_state` key uniqueness, the two `dim_year` suspension-year
-invariants (D14), and the chile suppression count (§9.4). All 28 pass as of
-2026-09-16.
+population, referential integrity on all eleven foreign keys, `dim_geography`,
+`fact_chile_state` and `fact_chile_census` key uniqueness, the two `dim_year`
+suspension-year invariants (D14), and the suppression counts in both chile
+facts (§9.4, §9.11). 28 at v0.4.0, 35 since v0.5.0; all 35 pass as of
+2026-10-05.
 
 | Stream | Rows |
 |---|---|
@@ -1209,7 +1210,7 @@ as an expected value for a filtered query.
 ---
 
 **10.6 — Iron County 2025 pastureland is a low-confidence outlier. Resolved
-2026-09-17 (D18); the interview question remains open.**
+2026-09-17 (D18); the interview question answered 2026-09-19.**
 The county's published series is 27.0, 20.0, 18.5, 16.0, 13.5, 16.5, **43.5**,
 22.0 for 2019-2026: six years of decline, a 164% single-year jump, then most of
 it given back. The CV moves with it — 7.0 in 2024, **28.7** in 2025, 8.3 in
@@ -1249,11 +1250,14 @@ The three candidate explanations — a changed respondent panel within the
 county, a genuine local rent event, or a model-based estimate pulled by a
 sparse sample — are not separable from this extract. The county panel is not
 published, and §3.6 means a thin year and a suppressed year look identical.
-Aaron's father operates in Iron County and is interviewed on 2026-09-19; **ask
-him directly whether pasture rents there moved in 2025.** A producer's answer
-does not settle a statistical question, but "nothing happened" versus "ground
-got tight when the neighbors' lease came up" points at different halves of it,
-and either is quotable.
+Aaron's father operates in Iron County and was asked directly, on 2026-09-19,
+whether pasture rents there moved in 2025. His answer was the "nothing happened"
+half: the county's landowners and operations have not changed in decades, he
+does not believe the figure, and he attributes it to a single report. That does
+not settle the statistical question, but it rules out the local-rent-event
+explanation as far as a producer can, and it leaves the estimate itself as the
+subject. The quotes are in article one; the questions sent to the NASS Heartland
+Regional Field Office on 2026-09-27 cover the remaining half.
 
 **10.7 — Doña Ana irrigated cropland is not a chile rent proxy. Resolved
 2026-10-01 by framing, not by data.** The article uses the setting framing below.
@@ -1360,9 +1364,9 @@ was recorded only in chat history, and a later session restarted it from step 1.
 | Page 1 | Scratch validation: national measures by year and land category | Working page. Not published. |
 | Iron County Pastureland | 2026-09-19 interview page: line chart, four cards, year slicer, table | Interview artifact. Not published. |
 | Iron County One-Pager | Letter-landscape (1056×816) printed sheet: title, table, CV footnote | Interview artifact. Not published. |
-| Chile Coverage | Published page 1: survey coverage vs. Census acres | Built (§11.6) |
-| Iron County | Published page 2: the counter-example | Built (§11.3) |
-| Your County | Published page 3: reader lookup by state, county and land category | Built (§11.5) |
+| Chile Coverage | Survey coverage vs. Census acres | Built (§11.6). Published 2026-10-02 to 2026-10-05; hidden since, exported as a static image (§11.8) |
+| Iron County | The counter-example | Built (§11.3). Published 2026-10-02 to 2026-10-05; hidden since, exported as a static image (§11.8) |
+| Your County | Reader lookup by state, county and land category | Built (§11.5). **The only published page** since 2026-10-05; the embed opens on it |
 | Dona Ana Chart | Doña Ana irrigated rent, nominal and 2025 dollars, with 2021–2026 ranges | Built 2026-10-05, hidden; exported as a static image (§11.8) |
 
 **Publishing change (2026-10-05).** Chile Coverage and Iron County are now hidden
@@ -1376,12 +1380,14 @@ All three Iron County pages carry hidden page-level filters for Missouri, Iron a
 Pastureland, set on attribute columns because the surrogate keys are hidden from
 report view.
 
-**Visibility and order (2026-10-01).** The three non-published pages are hidden
-(Hide page), so Publish to web shows only the published three; they stay in the
-`.pbix` and the repo. Published tabs follow the editorial direction
-(`docs/editorial-direction.md`): Chile Coverage leads, Iron County is the
-counter-example, Your County carries the reader's own lookup. The report opens on
-the page active at save, which must be Chile Coverage.
+**Visibility and order (2026-10-01; superseded 2026-10-05, above).** The three
+non-published pages were hidden (Hide page), so Publish to web showed only the
+published three; they stay in the `.pbix` and the repo. Published tabs followed
+the editorial direction (`docs/editorial-direction.md`): Chile Coverage led, Iron
+County was the counter-example, Your County carried the reader's own lookup. The
+report opened on the page active at save, which was Chile Coverage. Kept as the
+record of the 2026-10-02 publication; the current state is the single-page embed
+described under the publishing change.
 
 ### 11.2 Iron County page — decisions
 
@@ -1431,9 +1437,10 @@ its CV attached (D18).
 ### 11.4 Publishing — published to web 2026-10-02
 
 **Report.** Published from Desktop to My workspace (aaron@heatandharvest.com),
-republished with Replace after the fixes below. In the Service the Pages pane
-lists only Chile Coverage, Iron County and Your County, and the report opens on
-Chile Coverage. Before publishing to web:
+republished with Replace after the fixes below. At that publication the Pages
+pane in the Service listed Chile Coverage, Iron County and Your County and the
+report opened on Chile Coverage; since 2026-10-05 it lists Your County alone
+(§11.1). Before publishing to web:
 - Filters pane hidden for readers (eye icon in the Filters pane header). It was
   exposing visual-level filter cards such as "Chile Acres Harvested is (All)".
 - Alaska removed from the Your County State slicer (§11.5).
@@ -1623,6 +1630,7 @@ is credited "Chart: Mark Aaron Harris, H&H Data Desk (Power BI)".
 
 | Version | Date | Change |
 |---|---|---|
+| 0.5.9 | 2026-10-06 | **Documentation reconciliation; no model changes.** Found by a full recheck of every figure in the spec, the article and the pitch against the raw extracts (all reproduce). §5: `chk_row_counts` count 28 → 35 and `dim_state` 49 → 50, both missed at 0.5.0. §11.1: page table and the 2026-10-01 visibility paragraph marked superseded by the single-page embed; §11.4 Service sentence dated. §10.6: the interview question closed with the 2026-09-19 answer. §1 scope updated to three chile facts and the report layer. §12 rows below 0.3.2 put in version order. |
 | 0.5.8 | 2026-10-05 | **Doña Ana chart page; Your County is the only published page.** Two measures added to §8.2, `Rent Range Low` and `Rent Range High` (rough 95% bounds from the CV, single-row guard), validated on Doña Ana irrigated 2025 and 2026; measure count 15 → 17 on the cash rents star. Hidden Dona Ana Chart page built and validated against the article's figures, styled by Claude Code from `docs/layout/layout-brief-dona-ana.md` (§11.8). Chile Coverage and Iron County hidden and republished with Replace, so the embed opens on Your County with no page navigation; the three analysis pages reach the article as static images exported from the report (§11.1, §11.4, §11.8). Active page at save is now Your County. |
 | 0.5.7 | 2026-10-02 | **Spread layout and theme (AI-generated).** Report saved as `.pbip`; Claude Code applied a 1280 × 828 spread layout, headlines and deks, and the H&H Editorial theme from `docs/layout/layout-brief.md` in two rounds; matrix two-line year headers accepted; WordPress wrapper ratio updated (§11.7, §11.4). No model changes. |
 | 0.5.6 | 2026-10-02 | **Published to web; embedded in WordPress draft.** Iron County line chart titled and subtitled as the counter-example (§11.3). Filters pane hidden for readers; Alaska excluded from the Your County State slicer (§11.5). Admin takeover of the heatandharvest.com Microsoft directory and new embed codes enabled; embed URL recorded; WordPress draft post 223 with a responsive wrapper, no-sidebar layout and a full-screen link (§11.4). No model changes. |
@@ -1636,10 +1644,10 @@ is credited "Chart: Mark Aaron Harris, H&H Data Desk (Power BI)".
 | 0.3.4 | 2026-09-16 | **D14 ratified and executed** — `dim_year.survey_status` renamed to `cash_rents_survey_status`, so the conformed dimension no longer asserts a Cash Rents suspension over chile years that published normally. The rename surfaced three dependents, none of which the model reported on open: the `AddedResidualGrain` conditional column lost its first clause and returned errors on all 19 rows; that column's `type text` ascription was invalid against the nulls it returns by design and is now `type nullable text`; and `Rent YoY Pct (Matched Counties)` and `Rent YoY Pct (Unmatched)` both referenced the old column name and were broken in a file that opened without complaint. §6.5 records the conformed-dimension naming rule and the ascription. §8.5 updated to the new name. `chk_row_counts` extended to 19 assertions — suspension row count and `residual_grain` null count, both expecting 2 — because no existing assertion caught any of the three breaks. |
 | 0.3.3 | 2026-09-14 | §10.6 added — Iron County 2025 pastureland ($43.50, CV 28.7) is a `LOW`-confidence outlier in a declining series; the figure and its derived rank and vs-median claims are withdrawn from the article, and the general gap is that no measure stops a low-confidence estimate becoming a headline. §10.7 added — Doña Ana irrigated rent is not a chile-ground proxy, and the county's chile acreage is `(D)` in 2024-2025 so the pairing is unavailable. §2.1 added — reader-facing explanation of why a 2026 rate exists before 2026 ends, required in every version of the article. §7.3 added — worked nominal-versus-real figures for Iron County and the endpoint-sensitivity rule that the existing real-dollar rule does not cover. §8.2 baseline extended with the Iron County series and `Counties Reporting in State` for MO pastureland 2026 (104). Header now records the repo URL rather than a suggested path. |
 | 0.3.2 | 2026-09-13 | Four peer-context measures built and validated for the Iron County interview page: `State Median CV`, `State Median Rent per Acre`, `County Rank in State`, `Counties Reporting in State`. §8.2 baseline extended. §8.6 adds the `Skip`-versus-`Dense` rank tie rule. **§8.2 corrected** — the rising-CV finding was stated as holding "from 2021 to 2026" on figures that are 2021 and 2025; 2026 turns down on every national measure and Missouri is not monotonic. §3.2 adds the statutory cause of the 2015 and 2018 skips; §3.3 adds the Iron County 2008 case and the rule that a coverage gap and a suspension gap must be annotated separately. |
-| 0.1.0 | 2026-08-29 | Initial specification. Profile complete, decisions D1–D10 resolved, open item 10.1 resolved. No transformations executed. |
-| 0.1.1 | 2026-08-29 | §2 corrected: extract filename carries GUID hyphenation on disk (`9A9F55D7-E267-38C6-ACB9-DF106291B5A7.csv`). Same 32 hex characters, same extract. No model impact. |
-| 0.1.2 | 2026-09-04 | §3.9 corrected: 408 of 1,719 real county names are reused across states. The prior 410/1,721 counted `OTHER COUNTIES` and `OTHER (COMBINED) COUNTIES` as county names. Caught during the step 8 branch validation. |
-| 0.3.0 | 2026-09-05 | Five measures built. §8 expanded into conventions, measures-as-built, and the reasoning behind three naming and behaviour decisions. §8.5 records the composition-versus-rate finding and the −100% suspension-year bug. §6.5 adds the **Show items with no data** build requirement — the 19-row calendar is necessary but not sufficient to make the break visible. |
 | 0.3.1 | 2026-09-12 | Remaining four measures built and validated; §8.2 expanded with a regression baseline and the rising-CV finding. §8.6 added — peer groups iterate the fact rather than the dimension, `REMOVEFILTERS` on named columns rather than `ALLEXCEPT` on the table, and the blank-numerator guard. §3.14 scoped: county-scoped pastureland figures are 383/75 against the whole-extract 406/84. 10.4 closed. |
+| 0.3.0 | 2026-09-05 | Five measures built. §8 expanded into conventions, measures-as-built, and the reasoning behind three naming and behaviour decisions. §8.5 records the composition-versus-rate finding and the −100% suspension-year bug. §6.5 adds the **Show items with no data** build requirement — the 19-row calendar is necessary but not sufficient to make the break visible. |
 | 0.2.0 | 2026-09-04 | Reshape built and validated; spec reconciled to the pipeline as constructed. §5 rewritten (two step reorderings, design rules, `chk_row_counts`). §3.8 rewritten — the comma hazard is a locale-dependent misparse, not a silent null. §6.4 `is_chile_producing` deferred. §6.5 `residual_grain` null on suspension years; date-table limitation noted. §6.7 single-direction rationale. §7 CPI series loaded, with 2025 as an eleven-month and 2026 as a seven-month average. Open items 10.4, 10.5 added. |
 | 0.1.3 | 2026-09-04 | §3.10 corrected: real counties carry 23 district codes / 83 names / 306 state-district pairs. The prior 24/84 counted sentinel code `99` from the state-residual rows. Caught during `dim_geography` validation. Both §3.9 and §3.10 errors had the same cause — profile figures computed over the full extract and quoted as if county-scoped. |
+| 0.1.2 | 2026-09-04 | §3.9 corrected: 408 of 1,719 real county names are reused across states. The prior 410/1,721 counted `OTHER COUNTIES` and `OTHER (COMBINED) COUNTIES` as county names. Caught during the step 8 branch validation. |
+| 0.1.1 | 2026-08-29 | §2 corrected: extract filename carries GUID hyphenation on disk (`9A9F55D7-E267-38C6-ACB9-DF106291B5A7.csv`). Same 32 hex characters, same extract. No model impact. |
+| 0.1.0 | 2026-08-29 | Initial specification. Profile complete, decisions D1–D10 resolved, open item 10.1 resolved. No transformations executed. |
