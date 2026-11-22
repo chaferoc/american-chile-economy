@@ -60,6 +60,7 @@ so every figure in the model can be traced to the bytes it came from.
 
 ```
 american-chile-economy.pbip            Power BI project: open this
+american-chile-economy.pbix            Pre-layout snapshot (spec v0.5.6); not the current report
 american-chile-economy.Report/         Report definition (PBIR JSON)
 american-chile-economy.SemanticModel/  Model definition (TMDL: tables, measures, relationships, queries)
 data/raw/                              Quick Stats extracts, unmodified, GUID filenames
@@ -81,8 +82,8 @@ wordpress/mu-plugins/                  H&H Feature layout plugin used on heatand
   Cash Rents survey for years. He is a primary source on the instrument itself,
   which is not something the published data can supply.
 
-The report before the layout pass is in the git history (commit `f37c111`,
-spec v0.5.6).
+The report before the layout pass is kept as `american-chile-economy.pbix`
+(spec v0.5.6). Open the `.pbip` for the current report.
 
 ---
 
