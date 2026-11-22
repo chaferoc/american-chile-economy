@@ -5,6 +5,11 @@ that measurement misses, built as a documented, reproducible analytics
 pipeline: USDA public data → Power Query ETL → star schema → named DAX measures
 → published Power BI report and article.
 
+**Read it:** [From Hatch Chiles to Hay Bales](https://heatandharvest.com/from-hatch-chiles-to-hay-bales/)
+(Heat & Harvest, November 16, 2026). **Try it:** the
+[county cash rent lookup](https://app.powerbi.com/view?r=eyJrIjoiMzdmY2NhN2MtMmMxNi00NDg2LTkxYzAtZDRhMTQxYzUyMzI5IiwidCI6IjAwNmM3ZWM0LTY4YTctNGE4YS1hOGJlLTQ1ODA1NmEzOTlkOCJ9)
+embedded in the article.
+
 The project began as a study of the decline in U.S. chile production. About half
 of that decline turned out to be real, and the other half turned out to be the
 measurement stopping. In March 2019, USDA's five-year program review removed
@@ -28,8 +33,8 @@ payment rate is short and documented.
 
 **Status:** three facts built and validated (county cash rents, state chile,
 chile Census of Agriculture); 35 assertions passing; 22 measures validated;
-report published to web and embedded in the article draft on heatandharvest.com;
-article one in editing.
+report published to web and embedded in the article on heatandharvest.com;
+article one published November 16, 2026.
 
 ---
 
