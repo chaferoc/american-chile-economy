@@ -119,6 +119,9 @@ body.hh-feature .cm-entry-summary > .hh-bleed img {
 body.hh-feature .cm-entry-summary > .hh-bleed figcaption {
   padding: 0 var(--hh-pad-x);
 }
+body.hh-feature .cm-entry-summary > .hh-spread figcaption {
+  padding: 0 var(--hh-pad-x);
+}
 
 /* ---- Spread: opens across two pages, onto the desk --------------------- */
 
@@ -247,7 +250,7 @@ body.hh-feature .cm-entry-summary .wp-block-table td:first-child { text-align: l
     --hh-pad-x: 16px;
     --hh-pad-y: 20px;
   }
-  body.hh-feature #cm-content { padding: 0; }
+  body.hh-feature #cm-content { padding: 0; background: var(--hh-paper); }
   body.hh-feature article.post { box-shadow: none; }
   body.hh-feature .cm-post-content { padding-bottom: 40px; }
   body.hh-feature .cm-featured-image { margin-bottom: 24px; }
@@ -308,7 +311,8 @@ body.hh-feature .cm-entry-summary .wp-block-table td:first-child { text-align: l
     margin-right: 0;
     box-shadow: none;
   }
-  body.hh-feature .cm-entry-summary > .hh-bleed figcaption { padding: 0; }
+  body.hh-feature .cm-entry-summary > .hh-bleed figcaption,
+  body.hh-feature .cm-entry-summary > .hh-spread figcaption { padding: 0; }
 
   /* The interactive report can't print; the full-screen link stays */
   body.hh-feature .cm-entry-summary > div:has(iframe) { display: none !important; }
